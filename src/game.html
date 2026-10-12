@@ -231,6 +231,26 @@ textarea.code{width:100%;min-height:90px;margin-top:8px;font:12px/1.4 var(--fm);
 .tl-main{font-family:var(--fd);font-size:clamp(28px,8.5vw,44px);line-height:1.15;text-align:center;color:#2f6e52;-webkit-text-stroke:6px #fff;paint-order:stroke fill;text-shadow:0 4px 0 rgba(0,0,0,.12)}
 .title-lead{font-size:14px;margin:0;text-align:center}
 ul.chg{margin:4px 0 8px;padding-left:1.2em;font-size:13px;line-height:1.7}
+#dayFlip{position:fixed;inset:0;z-index:40;display:grid;place-items:center;background:rgba(10,20,15,.35);padding:16px;cursor:pointer}
+.df-card{display:flex;gap:16px;align-items:center;background:var(--panel);border-radius:20px;padding:18px 20px;box-shadow:0 12px 40px rgba(0,0,0,.25);max-width:360px;width:100%}
+.df-cal{flex:none;width:104px;border-radius:14px;overflow:hidden;background:#fff;color:#222;text-align:center;box-shadow:0 2px 0 rgba(0,0,0,.08);border:1px solid #e3e3e3}
+.df-m{background:#d4552a;color:#fff;font:700 12px var(--fb);padding:5px 0}
+.df-d{font:400 50px/1.1 var(--fd);padding-top:6px}
+.df-w{font:700 12px var(--fb);padding:0 4px 8px;color:#444}.df-w.sun{color:#c23b2e}.df-w.sat{color:#1f6fb0}
+.df-info{min-width:0}
+.df-wx{font-size:12px;font-weight:700;color:var(--reg)}
+.df-lbl{font-size:12px;color:var(--muted);margin-top:4px}
+.df-n{font-family:var(--fd);font-size:18px}.df-n b{font-size:40px;color:var(--accent);font-weight:400;margin:0 2px}
+.df-today{font-family:var(--fd);font-size:20px;color:var(--accent);margin-top:4px}
+.df-ev{font-weight:700;font-size:14px;margin-top:2px}
+#dayFlip.go .df-cal{animation:flip .6s cubic-bezier(.2,.8,.3,1.2)}
+#dayFlip.go .df-card{animation:pop .35s ease-out}
+@keyframes flip{0%{transform:perspective(400px) rotateX(-90deg);opacity:0}100%{transform:none;opacity:1}}
+@keyframes pop{0%{transform:scale(.9);opacity:0}100%{transform:none;opacity:1}}
+.cd{display:flex;gap:14px;align-items:center;padding:10px 14px}
+.cd-n{font-family:var(--fd);font-size:15px;white-space:nowrap}.cd-n b{font-size:32px;font-weight:400;color:var(--accent);margin:0 2px}
+.cd-ev{font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (prefers-reduced-motion: reduce){#dayFlip.go .df-cal,#dayFlip.go .df-card{animation:none}}
 @media (prefers-reduced-motion: reduce){*{scroll-behavior:auto}}
 </style>
 
@@ -247,6 +267,7 @@ ul.chg{margin:4px 0 8px;padding-left:1.2em;font-size:13px;line-height:1.7}
 </div></nav>
 <div id="sheet" hidden><div class="sheet-bg" data-a="bgClose"></div><div class="sheet-card" id="sheetCard" role="dialog" aria-modal="true"></div></div>
 <div id="toast" hidden></div>
+<div id="dayFlip" hidden data-a="flipClose"></div>
 
 <script>
 'use strict';
@@ -362,8 +383,8 @@ function satOnOrAfter(s){let d=s;while(dow(d)!==6)d=addD(d,1);return d;}
 function leagueDates(Y){const a=satOnOrAfter(`${Y}-11-12`),b=satOnOrAfter(`${Y+1}-01-12`);return [0,1,2,3,4].map(i=>addD(a,i*7)).concat([b,addD(b,7)]);}
 function rr(n){const a=[...Array(n).keys()],out=[];for(let r=0;r<n-1;r++){const pairs=[];for(let i=0;i<n/2;i++){let x=a[i],y=a[n-1-i];if((r+i)%2)[x,y]=[y,x];pairs.push([x,y]);}out.push(pairs);a.splice(1,0,a.pop());}return out;}
 function newLeague(Y,div){
-  const pool=[...(div===1?DIV1:DIV2)].sort(()=>Math.random()-.5).slice(0,7);
-  const teams=[{id:'me',name:S.team.name,lv:0,players:[]}].concat(pool.map(n=>mkTeam(n,div===1?R(63,76):R(49,63))));
+  let pool=realList(div).filter(([n])=>n!==S.team.name);if(pool.length<7)pool=pool.concat(teamPool(pool.map(x=>x[0]))).slice(0,7);pool=pool.slice(0,7);
+  const teams=[{id:'me',name:S.team.name,lv:0,players:[]}].concat(pool.map(([n,lv])=>mkTeam(n,lv+R(-1.5,1.5))));
   const dates=leagueDates(Y);
   return {season:Y,div,teams,rounds:rr(8).map((pairs,i)=>({date:dates[i],pairs,played:false})),table:teams.map(()=>({w:0,l:0,mw:0,ml:0})),done:false};
 }
@@ -679,6 +700,8 @@ function migrate(){
   S.talks=S.talks||[];
   migrateReal();
   S.settings=S.settings||{theme:'auto'};applyTheme();
+  if(!S.realT&&S.league){realizeLeague(S.league);S.realT=1;}
+  if(S.deleg.sel===undefined)S.deleg.sel=true;
 }
 function genCands(){return Array.from({length:4},()=>{const role=pick(Object.keys(ROLE)),sk=RI(1,5),g=pick(['M','F']);return {id:'s'+(S.nid++),g,name:pname(g),lk:genLook(g,RI(19,45)),role,skill:sk,wage:ROLE[role].w+(sk-1)*15000};});}
 function sell(item,want){const v=S.inv[item],w=Math.max(0,Math.round(want)),n=Math.min(v.q,w);v.q-=n;return {n,lost:w-n};}
@@ -752,7 +775,7 @@ function dayCore(){
   T.ran=true;
   prac.inj.forEach(t=>log(t));
   const tm=addD(T.date,1);
-  S.tmr={date:tm,reqs:genRequests(tm),menu:teamAuto()?hcMenu(tm):menuFor(tm)};
+  S.tmr={date:tm,reqs:genRequests(tm),menu:menuAuto()?hcPlan(tm):menuFor(tm)};
   S.tmr.auto=staffApprove(S.tmr);
   return {date:T.date,inc,out,prac,notes,vis,occ:occRate(T)};
 }
@@ -763,7 +786,7 @@ function weekSkip(){
   if(S.today.ran&&S.tmr)fin();
   for(let i=0;i<7;i++){
     const T=S.today, ev=eventOn(T.date);
-    if(ev&&!T.matchDone){if(teamAuto())hcSilent(ev);else{stop=ev;break;}}
+    if(ev&&!T.matchDone){if(teamAuto()&&S.deleg.sel===false)hcSilent(ev);else{stop=ev;break;}}
     if(!T.walk){computeWalk(T);T.walk=true;}
     const r=dayCore(), ni=tot(r.inc), no=tot(r.out);
     acc.inc+=ni;acc.out+=no;acc.days.push({d:r.date,net:ni-no,occ:r.occ});
@@ -771,7 +794,7 @@ function weekSkip(){
     if(r.prac.short)acc.notes.push(fmtShort(r.date)+' シャトル不足で練習の質が低下');
     fin();
   }
-  UI.skipping=false;save();UI.tab='gym';render();window.scrollTo(0,0);
+  UI.skipping=false;save();UI.tab='gym';render();window.scrollTo(0,0);setTimeout(dayFlip,50);
   if(!acc.days.length&&stop)return toast(`今日は${stop.name}です。先に試合を行ってください`);
   openSheet(`<div class="sheet-head"><div><div class="sub">まとめて進めました</div><h2>${acc.days.length}日間の結果</h2></div><button class="x" data-a="closeSheet" aria-label="閉じる">×</button></div>
   ${stop?`<p class="hint" style="border-left:3px solid var(--accent)">${fmtShort(S.today.date)}は <b>${stop.name}</b> のため停止しました。${stop.type==='indiv'?'エントリー':'オーダー'}を決めてください。</p>`:''}
@@ -847,8 +870,8 @@ function oppFor(ev){
   if(ev.type==='league')return S.league.teams[ev.opp];
   if(ev.type==='pm'){const x=S.pms.find(y=>y.id===ev.pmId);return x?x.team:mkTeam('練習相手',55);}
   if(!S.jit.opp||S.jit.opp.round!==ev.round){
-    const names=[...DIV1,...DIV2,...EXTRA].filter(n=>!S.league.teams.some(t=>t.name===n));
-    S.jit.opp={round:ev.round,team:mkTeam(pick(names),ev.lv+R(-3,3))};
+    const pool=teamPool(S.league.teams.map(t=>t.name)).sort((a,b)=>Math.abs(a[1]-ev.lv)-Math.abs(b[1]-ev.lv)).slice(0,3),c=pick(pool);
+    S.jit.opp={round:ev.round,team:mkTeam(c[0],(c[1]+ev.lv)/2+R(-2,2))};
   }
   return S.jit.opp.team;
 }
@@ -902,7 +925,7 @@ function newProspect(r){
   const roll=Math.random(); let lv,age,aff,join,wp;
   if(roll<.45){lv=R(38,52);age=18;aff=pick(PLACE)+'高校 3年';join=true;wp=.3;}
   else if(roll<.85){lv=R(46,60);age=22;aff=pick(PLACE)+pick(['大学','学院大学','体育大学'])+' 4年';join=true;wp=.5;}
-  else{lv=R(50,64);age=RI(24,29);aff='元・'+pick(EXTRA)+'(移籍希望)';join=false;wp=.6;}
+  else{lv=R(50,64);age=RI(24,29);aff='元・'+pick(teamPool([]))[0]+'(移籍希望)';join=false;wp=.6;}
   const p=newPlayer(lv,age,'emp'); p.wantPro=Math.random()<wp;
   return {id:'x'+(S.nid++),region:r,aff,join,p,acc:0,status:'open',offer:null};
 }
@@ -1111,7 +1134,7 @@ function migrateReal(){
   if(!S.pmCands)S.pmCands=genPmCands();
   migrateMoney();
 }
-function genPmCands(){const ex=S.league?S.league.teams.map(t=>t.name):[];return [...DIV1,...DIV2,...EXTRA].filter(n=>!ex.includes(n)).sort(()=>Math.random()-.5).slice(0,3).map(n=>mkTeam(n,R(48,72)));}
+function genPmCands(){const ex=S.league?S.league.teams.map(t=>t.name):[];return teamPool(ex).sort(()=>Math.random()-.5).slice(0,3).map(([n,lv])=>mkTeam(n,lv+R(-2,2)));}
 function wxOf(date){
   if(S.wx[date])return S.wx[date];
   const mo=+date.slice(5,7),rp={1:.15,2:.18,3:.28,4:.3,5:.3,6:.48,7:.4,8:.3,9:.42,10:.3,11:.22,12:.15}[mo];let w;
@@ -1316,7 +1339,7 @@ function settleFY(date){
 }
 function genMarket(){
   const pool=[];S.league.teams.slice(1).forEach(t=>t.players.forEach(p=>pool.push([p,t.name])));
-  for(let i=0;i<3;i++){const t=mkTeam(pick(EXTRA),R(55,70));t.players.slice(0,2).forEach(p=>pool.push([p,t.name]));}
+  for(let i=0;i<3;i++){const c=pick(teamPool(S.league.teams.map(t=>t.name)));const t=mkTeam(c[0],c[1]+R(-3,1));t.players.slice(0,2).forEach(p=>pool.push([p,t.name]));}
   S.market=pool.sort(()=>Math.random()-.5).slice(0,4).map(([p,from])=>{
     if(!p.age)p.age=RI(23,30);if(!p.pot)p.pot=clamp(Math.max(...Object.values(p.st))+R(2,10),40,96);
     if(p.fans==null)p.fans=Math.round(Math.max(50,(ovr(p)-40)*80));
@@ -1341,7 +1364,7 @@ function monthlyMoney(inc,out,notes){
   loanMonthly(out);fundMonthly(inc,notes);genSponsorOffers(notes);genSupplyOffer();
   const mo=+S.today.date.slice(5,7);
   for(const p of S.players.filter(p=>!p.maker&&(ovr(p)>=58||rankOf(p)<=80))){if(Math.random()<.2){const m=pick(MAKERS),amt=Math.round((ovr(p)-45)*60000/10000)*10000+300000;S.pendTalks.push({kind:'maker',who:{t:'p',id:p.id},text:`${m}からラケット契約のオファーが来ました!年${man(amt)}だそうです。受けてもいいですか?`,ch:['もちろん!受けていいぞ',S.supply?`チームの提供メーカー(${S.supply.maker})に合わせてくれ`:'今はやめておこう'],data:{m,amt}});break;}}
-  if(mo<=3)for(const p of S.players.filter(p=>ovr(p)>=60)){if(Math.random()<(p.sat<55?.25:.08)){const team=pick([...DIV1,...EXTRA]);S.pendTalks.push({kind:'poach',who:{t:'p',id:p.id},text:`監督…実は${team}から移籍の誘いを受けていて。正直、迷っています。`,ch:['残ってほしい!年俸を2割上げる','君の意思に任せる','移籍金をもらって送り出す'],data:{team,fee:Math.round((Math.max(0,ovr(p)-45)*500000+2000000)/100000)*100000}});break;}}
+  if(mo<=3)for(const p of S.players.filter(p=>ovr(p)>=60)){if(Math.random()<(p.sat<55?.25:.08)){const team=pick(teamPool([S.team.name]).filter(x=>x[1]>=64))[0];S.pendTalks.push({kind:'poach',who:{t:'p',id:p.id},text:`監督…実は${team}から移籍の誘いを受けていて。正直、迷っています。`,ch:['残ってほしい!年俸を2割上げる','君の意思に任せる','移籍金をもらって送り出す'],data:{team,fee:Math.round((Math.max(0,ovr(p)-45)*500000+2000000)/100000)*100000}});break;}}
   lifeEvents();mgrMonthly(notes);bossReports();
   if(teamAuto()&&(S.mtgDone||{}).team!==addD(S.today.date,-1).slice(0,7)&&(S.mtgDone||{}).team!==curMon())autoTeamMtg(true);
   if((gymAuto()||teamAuto())&&(S.mtgDone||{}).biz!==addD(S.today.date,-1).slice(0,7)&&(S.mtgDone||{}).biz!==curMon())autoBizMtg(true);
@@ -1489,6 +1512,7 @@ function orgView(){
   ${S.mgr?bossRow(S.mgr,'mgr',true)+tg('gym',D.gym,'体育館の経営を任せる'):S.mgrCands.map(b=>bossRow(b,'mgr',false)).join('')}
   <section class="card"><h3>監督(チームの采配)</h3><p class="note">任せると、練習メニューの調整、オーダー、試合中の采配、選手の相談への対応を監督が行います。契約しているだけでも練習の伸びが上がります。移籍や引退などの大事な相談はあなたに届きます。</p></section>
   ${S.hc?bossRow(S.hc,'hc',true)+tg('team',D.team,'チームの采配を任せる'):S.hcCands.map(b=>bossRow(b,'hc',false)).join('')}
+  ${S.hc?`<section class="card"><h3>大会のメンバー選考</h3><div class="row"><span class="grow note">${S.deleg.sel!==false?'大会の日は、監督とあなたで選考会議を開いて決めます。':'監督がメンバーを決めます(1週間まとめて進めても止まりません)。'}</span><button class="btn sm" data-a="selToggle">${S.deleg.sel!==false?'監督に一任する':'一緒に決める'}</button></div></section>`:''}
   <p class="note">支配人と監督の候補は毎月1日に入れ替わります。報酬は毎月25日払いです。</p>`;
 }
 /* ========== meetings ========== */
@@ -1571,7 +1595,7 @@ function openMtg(){
   const line=(w,t,extra)=>`<div class="mtg-line"><div class="row"><span class="av">${faceSVG(w.lk,w.mood||'normal',36)}</span><span class="grow"><b>${esc(w.name)}</b><br><span class="sub">${esc(w.role)}</span></span></div><p>${esc(t)}</p>${extra||''}</div>`;
   let body;
   if(M.reply){const r=M.reply;body=line(r.who,r.text,M.react?`<p class="sub" style="margin:0">${esc(M.react.who.name)}「${esc(M.react.text)}」</p>`:'')+'<button class="btn primary big" data-a="mtgNext">次へ</button>';}
-  else if(done)body=`<section class="card"><div class="list">${M.log.map(t=>`<div class="kv"><span>${esc(t[0])}</span><b>${esc(t[1])}</b></div>`).join('')}</div></section><p class="note">決めた方針は${fmtShort(S.mfx.until)}まで続きます。目標の達成状況はその日に判定されます。</p><button class="btn primary big" data-a="mtgClose">会議を終える</button>`;
+  else if(done)body=`<section class="card"><div class="list">${M.log.map(t=>`<div class="kv"><span>${esc(t[0])}</span><b>${esc(t[1])}</b></div>`).join('')}</div></section>${M.type==='sel'?'':`<p class="note">決めた方針は${fmtShort(S.mfx.until)}まで続きます。目標の達成状況はその日に判定されます。</p>`}<button class="btn primary big" data-a="mtgClose">${M.type==='sel'?(M.after?'会議を終えて試合へ':'会議を終える'):'会議を終える'}</button>`;
   else body=line(cur.who,cur.text)+`<div class="list">${cur.ch.map((c,i)=>`<button class="btn choice" data-a="mtgPick" data-i="${i}">${esc(c.l)}</button>`).join('')}</div>`;
   openSheet(head+body);
   if(!M.t0)M.t0=performance.now();M.tStep=performance.now();
@@ -1585,6 +1609,7 @@ function mtgReact(M,st,c){
 }
 function boardFor(cur,M,done){
   if(done)return {title:'決定事項',list:M.log.map(l=>l[1]).slice(-6)};
+  if(cur&&cur.board)return cur.board;
   const t=cur.topic,G=S.gym,L=S.ledger.slice(-30),occ=L.length?sum(L.map(l=>l.occ))/L.length:0,net=sum(L.map(l=>tot(l.inc)-tot(l.out)+(l.out.build||0)+(l.out.loan||0)-(l.inc.loanIn||0))),H=S.players.filter(p=>!unav(p));
   const avg=k=>Math.round(sum(H.map(p=>p.st[k]))/Math.max(1,H.length));
   switch(t){
@@ -1631,7 +1656,7 @@ function mtgDraw(){
   const spk=M.reply?M.reply.who:cur?cur.who:null,re=M.reply&&M.react?M.react.who:null,since=(performance.now()-(M.tStep||0))/1000;
   const bub=(m,cx,cy,s)=>{if(spk&&m.name===spk.name&&!done){const txt=(M.reply?M.reply.text:cur.text);drawBubble(x,cx,cy-s*5.4,txt.length>15?txt.slice(0,14)+'…':txt,11,W);}else if(re&&m.name===re.name&&since>.8)drawBubble(x,cx,cy-s*5.4,M.react.text,11,W);};
   const board=boardFor(cur,M,done);
-  if(M.type==='biz'){
+  if(M.type==='biz'||M.room==='biz'){
     const g=x.createLinearGradient(0,0,0,H*.62);g.addColorStop(0,'#e6e1d8');g.addColorStop(1,'#d3ccc0');x.fillStyle=g;x.fillRect(0,0,W,H*.62);
     x.fillStyle='#4f5a63';x.fillRect(0,H*.62,W,H*.38);x.fillStyle='rgba(255,255,255,.04)';for(let i=0;i<W;i+=8)x.fillRect(i,H*.62,4,H*.38);
     const wx=W*.83,wy=H*.08,ww=W*.14,wh=H*.36,sky=x.createLinearGradient(0,wy,0,wy+wh);sky.addColorStop(0,'#8ec2ea');sky.addColorStop(1,'#d9eef9');x.fillStyle=sky;x.fillRect(wx,wy,ww,wh);
@@ -1690,8 +1715,9 @@ function autoBizMtg(silent){
 }
 
 /* ========== v1.1: version, settings, overseas, live individual ========== */
-const VERSION='1.1.0';
+const VERSION='1.2.0';
 const CHANGELOG=[
+  {v:'1.2.0',d:'2026-10-12',items:['実業団チームを実在のチーム名に(S/Jリーグ2025シーズンの成績をもとに強さを設定)','練習メニューを監督に任せられるように(練習タブ)','大会ごとに、監督と一緒にメンバー選考会議を開けるように','日付が変わるときに、次の大会までの日数を表示','体育館タブに次の大会までのカウントダウン']},
   {v:'1.1.0',d:'2026-10-12',items:['設定画面を追加(右上の歯車)。セーブ・読み込みもここから','チーム名・選手名・体育館名を変更できるように','海外大会に出場できるように(日本代表・ランキング上位の選手)。賞金はドルで支払われ、円に換算して収入に','全日本総合・ランキングサーキット・社会人・海外大会を観戦して、作戦を指示できるように','スタート画面と体育館の見た目を一新']},
   {v:'1.0.0',d:'2026-10-12',items:['アプリ版を公開']},
 ];
@@ -1907,6 +1933,88 @@ function gvDraw(msg){
   if(msg){const bw=Math.min(L.W-40,240),my=(L.band+L.lobbyY)/2;x.fillStyle='rgba(255,255,255,.92)';rrect(x,(L.W-bw)/2,my-22,bw,44,22);x.fill();x.strokeStyle=t.mat;x.lineWidth=2;x.stroke();x.fillStyle=t.mat;x.font='400 15px "Dela Gothic One",sans-serif';x.textAlign='center';x.fillText(msg,L.W/2,my+5);}
 }
 
+/* ========== v1.2: real teams, coach-planned practice, selection meeting, day flip ========== */
+// 2025シーズンS/Jリーグの成績をもとにした、ゲーム内の強さの目安(公式の評価ではありません)
+const REAL={
+  M:{d1:[['NTT東日本',75],['BIPROGY',74],['日立情報通信エンジニアリング',73],['トナミ運輸',72],['ジェイテクト Stingers',70],['豊田通商',68],['金沢学院クラブ',67]],
+     d2:[['三菱自動車京都',63],['大同特殊鋼',62],['コンサドーレ',61],['東海興業',60],['丸杉スティーラーズ',59],['トヨタモビリティ東京',55],['北辰ロジスティクス',52]]},
+  F:{d1:[['BIPROGY',75],['岐阜Bluvic',74],['再春館製薬所',73],['ヨネックス',72],['ACT SAIKYO',70],['北都銀行',69],['NTT東日本',68]],
+     d2:[['七十七銀行',63],['レゾナック',62],['山陰合同銀行',61],['広島ガス',60],['Cheerful鳥取',57],['金沢学院クラブ',55],['北辰ロジスティクス',52]]},
+};
+const realList=div=>(REAL[(S&&S.team&&S.team.g)||'M']||REAL.M)[div===1?'d1':'d2'];
+function teamPool(exclude){const ex=new Set(exclude||[]);return realList(1).concat(realList(2)).filter(([n])=>!ex.has(n)&&n!==S.team.name);}
+function realizeLeague(L){
+  const mine=L.teams.slice(1).map((t,i)=>({t,i:i+1})).sort((a,b)=>b.t.lv-a.t.lv),src=realList(L.div).filter(([n])=>n!==S.team.name);
+  mine.forEach((o,k)=>{const r=src[k];if(!r)return;o.t.name=r[0];const d=r[1]-o.t.lv;o.t.lv=r[1];o.t.players.forEach(p=>SK.forEach(s=>p.st[s]=clamp(p.st[s]+d,20,95)));});
+}
+/* coach-planned practice */
+const SK2MENU={sm:'pattern',df:'knock',tc:'pattern',fw:'foot',st:'phys',mn:'game'};
+function teamAvg(k){const H=S.players.filter(p=>!unav(p));return H.length?sum(H.map(p=>p.st[k]))/H.length:50;}
+function hcPlan(date){
+  const H=S.players.filter(p=>!unav(p)),af=H.length?sum(H.map(p=>p.fat))/H.length:0,ev=eventOn(date),nx=eventOn(addD(date,1)),w=dow(date),sty=S.hc?S.hc.style:'def';
+  const weak=[...SK].sort((a,b)=>teamAvg(a)-teamAvg(b)),light=S.mfx&&S.mfx.light&&date<=S.mfx.light;
+  if(ev)return {m:'off',i:1,why:`${ev.name}のため練習はなし`};
+  if(nx)return {m:'game',i:0,why:`明日の${nx.name}に向けて、軽めの実戦練習で感覚を整える`};
+  if(af>66)return {m:'off',i:1,why:`疲労が溜まっている(平均${Math.round(af)})ので休養`};
+  if(w===0)return {m:'off',i:1,why:'週に1回の完全休養日'};
+  let base=sty==='atk'?2:sty==='dev'?1:1;if(af>50||light)base=0;
+  const plan={1:['foot','フットワークで1週間の土台作り'],2:[SK2MENU[weak[0]],`チームの課題「${SKN[weak[0]]}」を重点強化`],3:['game','実戦練習で試合勘を磨く'],4:[SK2MENU[weak[1]],`2番目の課題「${SKN[weak[1]]}」に取り組む`],5:[sty==='atk'?'pattern':sty==='def'?'knock':'phys',sty==='atk'?'攻撃パターンを反復':sty==='def'?'守備の反復練習':'フィジカルで体を作る'],6:['game','週末はゲーム練習で総仕上げ']}[w];
+  return {m:plan[0],i:plan[0]==='game'?Math.min(base,1):base,why:plan[1]+(base===0?'(疲労を見て軽め)':base===2?'(ハードに追い込む)':'')};
+}
+const menuAuto=()=>!!(S.hc&&(teamAuto()||(S.deleg&&S.deleg.menu)));
+function planDays(n){const out=[];for(let i=1;i<=n;i++){const d=addD(S.today.date,i);out.push({d,...hcPlan(d)});}return out;}
+function menuSec(){
+  const on=menuAuto(),lock=teamAuto();
+  if(!S.hc)return `<section class="card"><h3>練習メニューの決め方</h3><p class="note">監督を雇うと、練習メニューを監督に任せられます(経営タブ→組織)。</p></section>`;
+  const days=on?planDays(7):[],weak=[...SK].sort((a,b)=>teamAvg(a)-teamAvg(b))[0];
+  return `<section class="card"><h3>練習メニューの決め方</h3>
+  <div class="seg"><button class="${on?'':'on'}" data-a="menuMode" data-v="me" ${lock?'disabled':''}>自分で決める</button><button class="${on?'on':''}" data-a="menuMode" data-v="hc">監督に任せる</button></div>
+  ${on?`<div class="talk" style="margin-top:10px"><span class="av">${faceSVG(S.hc.lk,'normal',48)}</span><div class="bubble grow">今のチームの課題は「${SKN[weak]}」です。${HCSTYLE[S.hc.style]}のやり方で、疲労と大会の日程を見ながら毎日組みます。</div></div>
+  <div class="list" style="margin-top:8px">${days.map(x=>`<div class="kv"><span>${fmtShort(x.d)} <b style="font-family:var(--fb)">${x.m==='off'?'休み':MENU[x.m].n+'・'+INT[x.i].n}</b><br><span class="sub">${esc(x.why)}</span></span></div>`).join('')}</div>
+  <p class="note" style="margin-top:6px">翌日の予約確認の画面で、その日のメニューだけ変えることもできます。${lock?'チームの采配を任せている間は、監督がメニューを決めます。':''}</p>`:''}</section>`;
+}
+/* selection meeting (chairman + coach) */
+function slotTxt(fk,slots){return FMT[fk].map((f,i)=>`${f.l.replace('ダブルス','D').replace('シングルス','S')}:${(slots[i]||[]).map(id=>{const p=P(id);return p?p.name.split(' ')[0]:'—';}).join('・')}`);}
+function selMeeting(ev){
+  const me=meSpk(),hc=spk('hc'),st=[],mem=[me,hc];
+  if(S.captain&&P(S.captain))mem.push(spk('p',P(S.captain)));
+  const watch=(team)=>({who:me,topic:'試合の見方',text:'よし、メンバーはこれで決まりだ。試合はどうする?',ch:team?[
+      {l:'観戦して、自分も作戦を指示する',fx:()=>{const sl=UI.mtg.slots;UI.mtg.after=()=>liveMatch(ev,sl,false);return '承知しました。ベンチから一緒に戦いましょう。';}},
+      {l:'観戦して、采配は監督に任せる',fx:()=>{const sl=UI.mtg.slots;UI.mtg.after=()=>liveMatch(ev,sl,true);return 'お任せください。いい試合をお見せします。';}},
+      {l:'結果だけ報告してくれ',fx:()=>{const sl=UI.mtg.slots;UI.mtg.after=()=>{const res=runTeamMatch(fkOf(ev),sl,oppFor(ev),true);applyTeamResult(res,ev);showTeamResult(ev,res);};return '終わったらすぐにご報告します。';}}]:[
+      {l:'観戦して、自分も作戦を指示する',fx:()=>{UI.mtg.after=()=>liveIndiv(ev,indEntries(ev));return '一緒に見届けましょう。';}},
+      {l:'結果だけ報告してくれ',fx:()=>{UI.mtg.after=()=>ACT.indGo();return '終わったらご報告します。';}}]});
+  if(ev.type==='indiv'){
+    hcIND(ev);const en=indEntries(ev),lines=en.map(e=>`${e.k==='S'?'S':'D'}:${e.ids.map(id=>P(id).name.split(' ')[0]).join('・')}`);
+    const tired=en.flatMap(e=>e.ids).map(P).filter(p=>p.fat>55);
+    st.push({who:hc,topic:'メンバー選考',board:{title:`${ev.name} エントリー案`,list:lines.length?lines:['出場できる選手がいません']},text:`${ev.name}のエントリー案です。${ev.intl?`${ev.tier}の国際大会なので、出場資格のある選手から選びました。`:'調子と実力から選びました。'}${tired.length?`${tired[0].name}は少し疲れが残っています。`:''}`,ch:[
+      {l:'この案でいこう',fx:()=>'ありがとうございます。'},
+      {l:'自分で選び直す',fx:()=>{UI.mtg.after=()=>openIndiv();UI.mtg.steps.length=UI.mtg.i;return 'わかりました。選び直した案で行きましょう。';}}]});
+    st.push(watch(false));
+  } else {
+    const fk=fkOf(ev),opp=oppFor(ev),slots=hcSlots(ev),os=[...opp.players].sort((a,b)=>ovr(b)-ovr(a)),ace=os[0];
+    const used=[...new Set(slots.flat())].map(P).filter(Boolean),tired=used.filter(p=>p.fat>55).sort((a,b)=>b.fat-a.fat)[0];
+    const myAce=[...S.players].filter(p=>!unav(p)).sort((a,b)=>ovr(b)-ovr(a))[0];
+    st.push({who:hc,topic:'相手の分析',board:{title:`vs ${opp.name}`,rows:[['相手の戦力',Math.round(opp.lv)],['相手のエース',ace?ace.name.split(' ')[0]+`(${STY[ace.style]})`:'—'],['こちらのエース',myAce?myAce.name.split(' ')[0]:'—'],['大会',ev.name]]},text:`${opp.name}は戦力${Math.round(opp.lv)}。エースは${ace?ace.name:'—'}で、${ace&&ace.weak?`弱点は${WEAKN[ace.weak]}です。`:'穴の少ないチームです。'}`,ch:[{l:'なるほど、オーダー案を聞こう',fx:()=>''}]});
+    st.push({who:hc,topic:'メンバー選考',board:{title:'オーダー案',list:slotTxt(fk,slots)},text:`オーダー案をボードに書きました。${tired?`${tired.name}は疲労が少しあります(${Math.round(tired.fat)})。`:'全員コンディションは良好です。'}いかがでしょうか。`,ch:[
+      {l:'この案でいこう',fx:()=>{UI.mtg.slots=slots;return 'ありがとうございます。この布陣で勝ちにいきます。';}},
+      ...(tired?[{l:`${tired.name.split(' ')[0]}は休ませよう`,fx:()=>{const keep=tired.inj;tired.inj=1;const s2=hcSlots(ev);tired.inj=keep;UI.mtg.slots=s2;UI.mtg.steps.splice(UI.mtg.i,0,{who:hc,topic:'修正案',board:{title:'修正したオーダー',list:slotTxt(fk,s2)},text:`${tired.name}を外して組み直しました。こちらでどうでしょう。`,ch:[{l:'これでいこう',fx:()=>'承知しました。'}]});return '確かに、無理はさせられませんね。';}}]:[]),
+      {l:'自分で組み直す',fx:()=>{UI.mtg.after=()=>{ORD={date:S.today.date,slots:slots.map(x=>x.slice())};openOrder();};UI.mtg.steps.length=UI.mtg.i;return 'わかりました。会長の案で行きましょう。';}}]});
+    st.push(watch(true));
+  }
+  return {type:'sel',room:'biz',title:'メンバー選考会議',members:mem,steps:st,slots:null};
+}
+/* day flip */
+function nextEv(){const t=S.today.date;return upcoming(4).find(e=>e.date>t||(e.date===t&&!S.today.matchDone));}
+function dayFlip(){
+  const el=$('#dayFlip');if(!el||!S)return;const d=D(S.today.date),ev=nextEv(),n=ev?dBetween(S.today.date,ev.date):null,hol=holiday(S.today.date);
+  el.innerHTML=`<div class="df-card"><div class="df-cal"><div class="df-m">${d.getFullYear()}年${d.getMonth()+1}月</div><div class="df-d">${d.getDate()}</div><div class="df-w ${d.getDay()===0||hol?'sun':d.getDay()===6?'sat':''}">${WD[d.getDay()]}曜日${hol?'・'+hol:''}</div></div>
+  <div class="df-info"><div class="df-wx">${WXN[wxOf(S.today.date)]}</div>${ev?(n===0?`<div class="df-today">今日は試合の日</div><div class="df-ev">${esc(ev.name)}</div>`:`<div class="df-lbl">次の大会まで</div><div class="df-n">あと<b>${n}</b>日</div><div class="df-ev">${esc(ev.name)}</div>`):'<div class="df-lbl">しばらく大会はありません</div>'}</div></div>`;
+  el.hidden=false;el.classList.remove('go');void el.offsetWidth;el.classList.add('go');
+  clearTimeout(dayFlip.t);dayFlip.t=setTimeout(()=>{el.hidden=true;},2600);
+}
+function countdownCard(){const ev=nextEv();if(!ev)return '';const n=dBetween(S.today.date,ev.date);return `<section class="card cd"><div class="cd-n">${n===0?'<b>今日</b>':`あと<b>${n}</b>日`}</div><div class="grow" style="min-width:0"><div class="sub">${n===0?'本日の大会':'次の大会'}・${fmtShort(ev.date)}</div><div class="cd-ev">${esc(ev.name)}</div></div></section>`;}
+
 /* ========== save ========== */
 function save(){if(!S)return;const t=JSON.stringify(S);try{localStorage.setItem(SAVE,t);}catch(e){}try{window.__nativeSave&&window.__nativeSave(SAVE,t);}catch(e){}}
 /* ========== save data: slots / export / import ========== */
@@ -1957,6 +2065,7 @@ function vGym(){
   let btn;
   if(UI.running)btn='';
   else if(T.ran)btn=S.tmr&&S.tmr.auto?`<div class="grid2"><button class="btn" data-a="openBooking">予約を確認</button><button class="btn primary" data-a="confirmTmr">翌日へ</button></div>`:`<button class="btn primary big" data-a="openBooking">翌日の予約確認へ</button>`;
+  else if(ev&&!T.matchDone&&S.hc&&S.deleg.sel!==false)btn=`<button class="btn warn big" data-a="selMtg">メンバー選考会議を開く</button><button class="btn sm" style="align-self:center" data-a="${ev.type==='indiv'?'openIndiv':'openOrder'}">監督と相談せずに自分で決める</button>`;
   else if(ev&&!T.matchDone&&teamAuto())btn=ev.type==='indiv'?`<button class="btn warn big" data-a="hcAuto">監督にエントリーを任せる</button>`:`<div class="grid2"><button class="btn warn" data-a="hcWatch">観戦する(監督が采配)</button><button class="btn" data-a="hcAuto">結果だけ見る</button></div><button class="btn sm" style="align-self:center" data-a="openOrder">自分でオーダーを組む</button>`;
   else if(ev&&!T.matchDone)btn=ev.type==='indiv'?`<button class="btn warn big" data-a="openIndiv">エントリーを決める</button>`:`<button class="btn warn big" data-a="openOrder">オーダーを組む</button>`;
   else btn=`<button class="btn primary big" data-a="startDay">営業開始</button>`;
@@ -1971,6 +2080,7 @@ function vGym(){
     <div class="legend"><span><i style="background:var(--team)"></i>チーム練習</span><span><i style="background:var(--bk)"></i>予約</span><span><i style="background:var(--reg)"></i>定期利用</span><span><i style="background:var(--walk)"></i>個人開放</span><span><i style="background:var(--school)"></i>スクール</span></div>
   </section>
   ${crisisBanner()}
+  ${countdownCard()}
   ${S.chair?'<section class="card"><div class="sub">会長モード</div><p class="note" style="margin:4px 0 0">日々の運営は支配人と監督が行っています。「1週間まとめて進める」で大きく時間を進められます。</p></section>':''}
   ${talkStrip()}
   ${mtgCard()}
@@ -1978,7 +2088,6 @@ function vGym(){
   <div class="kpis">${kpi(T.bks.length+'件','本日の予約')}${kpi(man(fees),'予約売上')}${kpi(Math.round(occRate(T)*100)+'%','予約稼働率')}${kpi(prac,'チーム練習')}</div>
   ${btn}
   ${UI.running?'':`<button class="btn" style="width:100%" data-a="week">1週間まとめて進める</button>`}
-  ${nx?`<p class="next">次の大会:${nx.name}・${fmtShort(nx.date)}(あと${dBetween(T.date,nx.date)}日)</p>`:''}
   <section class="card"><h3>お知らせ</h3><ul class="log">${S.log.slice(0,8).map(l=>`<li><time>${fmtShort(l.d)}</time><span>${esc(l.t)}</span></li>`).join('')}</ul></section>`;
 }
 function evCard(ev,T){
@@ -2017,14 +2126,16 @@ function vBook(){
   <section class="card"><h3>定期利用団体 ${S.regulars.length}</h3><div class="list">${S.regulars.slice().sort((a,b)=>a.dow-b.dow||a.start-b.start).map(r=>`<div class="kv"><span>${WD[r.dow]}曜 ${r.start}:00–${r.start+r.dur}:00・${esc(r.name)}</span><b>${r.courts}面</b></div>`).join('')}</div><p class="note" style="margin-top:8px">定期利用を断ると評判が下がり、離れていくこともあります。</p></section>`;
 }
 function vTrain(){
+  const MS=menuSec();
   const pr=S.practice, C=S.gym.courts, opt=(a,b,v,f)=>{let s='';for(let i=a;i<=b;i++)s+=`<option value="${i}" ${i===v?'selected':''}>${f?f(i):i}</option>`;return s;};
   const emps=S.players.filter(p=>p.ct==='emp');
   return `
+  ${MS}
   <section class="card"><h3>チーム練習の時間とコート</h3>
     <div class="row"><select id="pStart" data-c="pStart">${opt(9,20,pr.start,i=>i+':00')}</select><span>〜</span><select id="pEnd" data-c="pEnd">${opt(pr.start+1,22,pr.end,i=>i+':00')}</select><select id="pCourts" data-c="pCourts">${opt(1,C,Math.min(pr.courts,C),i=>i+'面使用')}</select></div>
     <p class="hint" style="margin-top:10px">平日の夕方〜夜は一般の予約が最も多い時間帯です。練習に使うコートが多いほど貸出できる枠は減ります。変更は次回の予約受付から反映されます。</p>
   </section>
-  <section class="card"><h3>週間練習メニュー</h3>
+  <section class="card"><h3>週間練習メニュー${menuAuto()?' <span class="sub">監督に任せている間は使われません</span>':''}</h3>
     ${S.week.map((w,i)=>`<div class="wk ${i===0?'sun':i===6?'sat':''}"><b>${WD[i]}</b><select id="wkM${i}" data-c="wkM" data-i="${i}">${Object.entries(MENU).map(([k,v])=>`<option value="${k}" ${w.m===k?'selected':''}>${v.n}</option>`).join('')}</select><select id="wkI${i}" data-c="wkI" data-i="${i}" ${w.m==='off'?'disabled':''}>${INT.map((v,j)=>`<option value="${j}" ${w.i===j?'selected':''}>${v.n}</option>`).join('')}</select></div>`).join('')}
     <p class="hint" style="margin-top:8px">フットワーク=フットワーク・スタミナ/ノック=レシーブ・技術/パターン=スマッシュ・技術/ゲーム=全般+メンタル+ペアの連携/フィジカル=スタミナ・スマッシュ。ハードは伸びるが疲労とケガが増えます。</p>
   </section>
@@ -2183,7 +2294,7 @@ function openBooking(){
   const m=t.menu, hol=holiday(t.date);
   openSheet(`<div class="sheet-head"><div><div class="sub">翌日の予約確認</div><h2>${fmtLong(t.date)}${hol?` <span class="hol">${hol}</span>`:''}</h2></div></div>
   ${ev?`<p class="hint" style="border-left:3px solid var(--accent)">明日は <b>${ev.name}</b>。チーム練習はありません。</p>`:''}
-  <section class="card"><h3>明日の練習</h3>${ev?'<p class="note">大会のため休み</p>':`<div class="row"><select id="tmrM" data-c="tmrM">${Object.entries(MENU).map(([k,v])=>`<option value="${k}" ${m.m===k?'selected':''}>${v.n}</option>`).join('')}</select><select id="tmrI" data-c="tmrI" ${m.m==='off'?'disabled':''}>${INT.map((v,j)=>`<option value="${j}" ${m.i===j?'selected':''}>${v.n}</option>`).join('')}</select><span class="sub">${m.m==='off'?'コートを全面貸出':`${S.practice.start}–${S.practice.end}時・${Math.min(S.practice.courts,S.gym.courts)}面`}</span></div>`}</section>
+  <section class="card"><h3>明日の練習</h3>${ev?'<p class="note">大会のため休み</p>':`<div class="row"><select id="tmrM" data-c="tmrM">${Object.entries(MENU).map(([k,v])=>`<option value="${k}" ${m.m===k?'selected':''}>${v.n}</option>`).join('')}</select><select id="tmrI" data-c="tmrI" ${m.m==='off'?'disabled':''}>${INT.map((v,j)=>`<option value="${j}" ${m.i===j?'selected':''}>${v.n}</option>`).join('')}</select><span class="sub">${m.m==='off'?'コートを全面貸出':`${S.practice.start}–${S.practice.end}時・${Math.min(S.practice.courts,S.gym.courts)}面`}</span></div>${m.why&&S.hc?`<div class="talk" style="margin-top:8px"><span class="av">${faceSVG(S.hc.lk,'normal',36)}</span><div class="bubble grow" style="font-size:13px;padding:8px 10px">監督:${esc(m.why)}</div></div>`:''}`}</section>
   ${gridHTML(g,t.reqs)}
   ${bumped?`<p class="err">練習の変更で ${bumped}件の承認が取り消されました</p>`:''}
   <div class="row"><span class="grow sub">申込 ${t.reqs.length}件・承認 ${ok.length}件・売上見込 <b class="num">${yen(sum(ok.map(r=>r.fee)))}</b></span><button class="btn sm" data-a="rqAuto">空き枠をおまかせ承認</button></div>
@@ -2591,7 +2702,8 @@ const ACT={
     [...S.tmr.reqs].filter(r=>r.st!=='a').sort((a,b)=>(b.reg-a.reg)||(b.fee-a.fee)).forEach(r=>{if(place(g,r))r.st='a';});
     save();openBooking();
   },
-  confirmTmr:()=>{advanceDay();closeSheet();UI.tab='gym';render();window.scrollTo(0,0);toast(fmtShort(S.today.date)+' の朝です');},
+  confirmTmr:()=>{advanceDay();closeSheet();UI.tab='gym';render();window.scrollTo(0,0);dayFlip();},
+  flipClose:()=>{const el=$('#dayFlip');if(el)el.hidden=true;},
   openOrder:()=>openOrder(),
   ordAuto:()=>{const ev=eventOn(S.today.date);ORD.slots=aiOrder(S.players,FMT[fkOf(ev)]).map(s=>s.map(p=>p?p.id:''));openOrder();},
   ordGo:()=>{
@@ -2662,7 +2774,10 @@ const ACT={
   mtgSkip:()=>{autoTeamMtg(false);save();render();},
   mtgPick:d=>{const M=UI.mtg;if(!M)return;const st=M.steps[M.i],c=st.ch[+d.i];if(!c)return;const r=c.fx();M.log.push([st.topic,c.l]);M.i++;clampAll();M.reply=r?(typeof r==='string'?{who:st.who,text:r}:r):null;M.react=mtgReact(M,st,c);if(!M.reply&&M.react){M.reply=M.react;M.react=null;}save();openMtg();},
   mtgNext:()=>{if(UI.mtg){UI.mtg.reply=null;openMtg();}},
-  mtgClose:()=>{const M=UI.mtg;if(M)log(`${M.title}を開きました(${M.log.map(x=>x[1]).join('・')})`);UI.mtg=null;save();closeSheet();render();},
+  mtgClose:()=>{const M=UI.mtg;if(M)log(`${M.title}を開きました(${M.log.map(x=>x[1]).join('・')})`);UI.mtg=null;save();closeSheet();render();if(M&&M.after)M.after();},
+  selMtg:()=>{const ev=eventOn(S.today.date);if(!ev||S.today.matchDone||!S.hc)return;startMtg(selMeeting(ev));},
+  menuMode:d=>{S.deleg.menu=d.v==='hc';if(S.tmr&&!S.today.ran)S.tmr=null;save();render();toast(S.deleg.menu?'練習メニューを監督に任せました':'練習メニューを自分で決めます');},
+  selToggle:()=>{S.deleg.sel=S.deleg.sel===false;save();render();},
   hcAuto:()=>{const ev=eventOn(S.today.date);if(!ev||S.today.matchDone||!S.hc)return;if(ev.type==='indiv'){hcIND(ev);ACT.indGo();return;}const res=runTeamMatch(fkOf(ev),hcSlots(ev),oppFor(ev),true);applyTeamResult(res,ev);showTeamResult(ev,res);},
   hcWatch:()=>{const ev=eventOn(S.today.date);if(!ev||S.today.matchDone||!S.hc)return;liveMatch(ev,hcSlots(ev),true);},
   hireBoss:d=>{const k=d.k,L=k==='mgr'?S.mgrCands:S.hcCands,b=L.find(x=>x.id===d.id);if(!b||S[k])return;b.since=S.today.date;S[k]=b;if(k==='mgr')S.mgrCands=L.filter(x=>x!==b);else S.hcCands=L.filter(x=>x!==b);log(`${b.name}を${k==='mgr'?'支配人':'監督'}として迎えました`);S.talks.unshift({id:'k'+(S.nid++),kind:'report',who:{t:k},text:k==='mgr'?'本日から支配人を務めます。お客様に愛される体育館にしてみせます。':'本日から監督を務めます。このチームを日本一に導きます。',ch:['よろしく頼む'],data:{}});save();render();toast('契約しました');},
@@ -2713,7 +2828,7 @@ const CH={
   wkM:(v,d)=>{S.week[d.i].m=v;save();render();},
   wkI:(v,d)=>{S.week[d.i].i=+v;save();},
   work:(v,d)=>{P(d.id).work=v;save();if(!$('#sheet').hidden)openPlayer(d.id);render();},
-  tmrM:v=>{S.tmr.menu.m=v;save();openBooking();},
+  tmrM:v=>{S.tmr.menu.m=v;S.tmr.menu.why='';save();openBooking();},
   tmrI:v=>{S.tmr.menu.i=+v;save();},
   ord:(v,d)=>{ORD.slots[d.i][d.j]=v;openOrder();},
   indS:(v,d,el)=>{const id=d.id;if(el.checked){if(IND.s.length>=3){el.checked=false;return toast('シングルスは3名まで');}IND.s.push(id);}else IND.s=IND.s.filter(x=>x!==id);},
