@@ -1637,7 +1637,7 @@ function mfxEval(date){
 }
 /* ========== meeting room ========== */
 function openMtg(){
-  const M=UI.mtg;if(!M)return;const done=M.i>=M.steps.length&&!M.reply,cur=M.reply?M.steps[M.i-1]:M.steps[M.i];
+  const M=UI.mtg;if(!M)return;const done=M.i>=M.steps.length&&!M.reply,cur=(M.reply?M.steps[M.i-1]:M.steps[M.i])||{topic:'',text:'',ch:[],who:M.members[0]};
   const head=`<div class="sheet-head"><div><div class="sub">${M.title}・${done?'まとめ':`議題 ${Math.min(M.i+(M.reply?0:1),M.steps.length)}/${M.steps.length}`}</div><h2>${done?'決定事項':esc(cur.topic)}</h2></div></div><div class="mtg-room"><canvas id="mtgCv" aria-label="${M.type==='biz'?'会議室':'ミーティングルーム'}の様子"></canvas></div>`;
   const line=(w,t,extra)=>`<div class="mtg-line"><div class="row"><span class="av">${faceSVG(w.lk,w.mood||'normal',36)}</span><span class="grow"><b>${esc(w.name)}</b><br><span class="sub">${esc(w.role)}</span></span></div><p>${esc(t)}</p>${extra||''}</div>`;
   let body;
@@ -1706,7 +1706,7 @@ function mtgDraw(){
   const W=cv.parentElement.clientWidth||340,H=Math.round(W*.62),dpr=window.devicePixelRatio||1;
   if(cv.width!==Math.round(W*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);cv.style.height=H+'px';}
   const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);
-  const t=performance.now()/1000,done=M.i>=M.steps.length&&!M.reply,cur=M.reply?M.steps[M.i-1]:M.steps[M.i];
+  const t=performance.now()/1000,done=M.i>=M.steps.length&&!M.reply,cur=(M.reply?M.steps[M.i-1]:M.steps[M.i])||{topic:'',text:'',ch:[],who:M.members[0]};
   const spk=M.reply?M.reply.who:cur?cur.who:null,re=M.reply&&M.react?M.react.who:null,since=(performance.now()-(M.tStep||0))/1000;
   const bub=(m,cx,cy,s)=>{if(spk&&m.name===spk.name&&!done)speakIcon(x,cx,cy,s,t,false,W);else if(re&&m.name===re.name&&since>.8)speakIcon(x,cx,cy,s,t,true,W);};
   const board=boardFor(cur,M,done);
@@ -1769,8 +1769,9 @@ function autoBizMtg(silent){
 }
 
 /* ========== v1.1: version, settings, overseas, live individual ========== */
-const VERSION='1.3.1';
+const VERSION='1.3.2';
 const CHANGELOG=[
+  {v:'1.3.2',d:'2026-10-12',items:['メンバー選考会議で「自分で組み直す」を選ぶと画面が止まる不具合を修正']},
   {v:'1.3.1',d:'2026-10-12',items:['会議やメンバー選考で、吹き出しがホワイトボードに重ならないように修正(話している人には「…」のマーク)']},
   {v:'1.3.0',d:'2026-10-12',items:['スカウトマンを雇えるように(選手タブ→スカウト)','担当地域と方針(即戦力・将来性・シングルス/ダブルス向きなど)を指定すると、毎週有望選手を見つけて報告','スカウトの推薦度(★)と「注目選手」の印']},
   {v:'1.2.0',d:'2026-10-12',items:['実業団チームを実在のチーム名に(S/Jリーグ2025シーズンの成績をもとに強さを設定)','練習メニューを監督に任せられるように(練習タブ)','大会ごとに、監督と一緒にメンバー選考会議を開けるように','日付が変わるときに、次の大会までの日数を表示','体育館タブに次の大会までのカウントダウン']},
@@ -2045,7 +2046,7 @@ function selMeeting(ev){
     const tired=en.flatMap(e=>e.ids).map(P).filter(p=>p.fat>55);
     st.push({who:hc,topic:'メンバー選考',board:{title:`${ev.name} エントリー案`,list:lines.length?lines:['出場できる選手がいません']},text:`${ev.name}のエントリー案です。${ev.intl?`${ev.tier}の国際大会なので、出場資格のある選手から選びました。`:'調子と実力から選びました。'}${tired.length?`${tired[0].name}は少し疲れが残っています。`:''}`,ch:[
       {l:'この案でいこう',fx:()=>'ありがとうございます。'},
-      {l:'自分で選び直す',fx:()=>{UI.mtg.after=()=>openIndiv();UI.mtg.steps.length=UI.mtg.i;return 'わかりました。選び直した案で行きましょう。';}}]});
+      {l:'自分で選び直す',fx:()=>{UI.mtg.after=()=>openIndiv();UI.mtg.steps.length=UI.mtg.i+1;return 'わかりました。選び直した案で行きましょう。';}}]});
     st.push(watch(false));
   } else {
     const fk=fkOf(ev),opp=oppFor(ev),slots=hcSlots(ev),os=[...opp.players].sort((a,b)=>ovr(b)-ovr(a)),ace=os[0];
@@ -2055,7 +2056,7 @@ function selMeeting(ev){
     st.push({who:hc,topic:'メンバー選考',board:{title:'オーダー案',list:slotTxt(fk,slots)},text:`オーダー案をボードに書きました。${tired?`${tired.name}は疲労が少しあります(${Math.round(tired.fat)})。`:'全員コンディションは良好です。'}いかがでしょうか。`,ch:[
       {l:'この案でいこう',fx:()=>{UI.mtg.slots=slots;return 'ありがとうございます。この布陣で勝ちにいきます。';}},
       ...(tired?[{l:`${tired.name.split(' ')[0]}は休ませよう`,fx:()=>{const keep=tired.inj;tired.inj=1;const s2=hcSlots(ev);tired.inj=keep;UI.mtg.slots=s2;UI.mtg.steps.splice(UI.mtg.i,0,{who:hc,topic:'修正案',board:{title:'修正したオーダー',list:slotTxt(fk,s2)},text:`${tired.name}を外して組み直しました。こちらでどうでしょう。`,ch:[{l:'これでいこう',fx:()=>'承知しました。'}]});return '確かに、無理はさせられませんね。';}}]:[]),
-      {l:'自分で組み直す',fx:()=>{UI.mtg.after=()=>{ORD={date:S.today.date,slots:slots.map(x=>x.slice())};openOrder();};UI.mtg.steps.length=UI.mtg.i;return 'わかりました。会長の案で行きましょう。';}}]});
+      {l:'自分で組み直す',fx:()=>{UI.mtg.after=()=>{ORD={date:S.today.date,slots:slots.map(x=>x.slice())};openOrder();};UI.mtg.steps.length=UI.mtg.i+1;return 'わかりました。会長の案で行きましょう。';}}]});
     st.push(watch(true));
   }
   return {type:'sel',room:'biz',title:'メンバー選考会議',members:mem,steps:st,slots:null};
