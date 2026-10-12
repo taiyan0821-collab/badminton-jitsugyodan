@@ -1649,6 +1649,13 @@ function drawBoard(x,bx,by,bw,bh,b,team){
 }
 const SUIT={'あなた':'#2b2f3a'};
 function personShirt(m){if(m.name==='あなた')return '#2b2f3a';if(/^支配人/.test(m.role))return '#4b5563';if(/^監督/.test(m.role))return '#24408f';return null;}
+function speakIcon(x,cx,cy,s,t,react,W){
+  const hy=cy-s*3.9,w=Math.max(22,s*2.4),h=Math.max(14,s*1.5),bx=clamp(cx+s*1.2,2,W-w-2),by=hy-s*1.6-h/2;
+  x.fillStyle=react?'#fff4d6':'#ffffff';x.strokeStyle='rgba(30,30,30,.65)';x.lineWidth=1;rrect(x,bx,by,w,h,h/2);x.fill();x.stroke();
+  x.beginPath();x.moveTo(bx+3,by+h-2);x.lineTo(cx+s*.6,hy-s*.6);x.lineTo(bx+9,by+h-1);x.closePath();x.fill();
+  if(react){x.fillStyle='#d4552a';x.font=`700 ${h*.8}px "Zen Kaku Gothic New",sans-serif`;x.textAlign='center';x.fillText('!',bx+w/2,by+h*.8);return;}
+  for(let i=0;i<3;i++){const a=.35+.65*Math.max(0,Math.sin(t*6-i*.9));x.fillStyle=`rgba(40,40,40,${a})`;x.beginPath();x.arc(bx+w*(.28+i*.22),by+h/2,Math.max(1.6,h*.13),0,7);x.fill();}
+}
 function mtgDraw(){
   const cv=$('#mtgCv'),M=UI.mtg;if(!cv||!M)return false;
   const W=cv.parentElement.clientWidth||340,H=Math.round(W*.62),dpr=window.devicePixelRatio||1;
@@ -1656,7 +1663,7 @@ function mtgDraw(){
   const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);
   const t=performance.now()/1000,done=M.i>=M.steps.length&&!M.reply,cur=M.reply?M.steps[M.i-1]:M.steps[M.i];
   const spk=M.reply?M.reply.who:cur?cur.who:null,re=M.reply&&M.react?M.react.who:null,since=(performance.now()-(M.tStep||0))/1000;
-  const bub=(m,cx,cy,s)=>{if(spk&&m.name===spk.name&&!done){const txt=(M.reply?M.reply.text:cur.text);drawBubble(x,cx,cy-s*5.4,txt.length>15?txt.slice(0,14)+'…':txt,11,W);}else if(re&&m.name===re.name&&since>.8)drawBubble(x,cx,cy-s*5.4,M.react.text,11,W);};
+  const bub=(m,cx,cy,s)=>{if(spk&&m.name===spk.name&&!done)speakIcon(x,cx,cy,s,t,false,W);else if(re&&m.name===re.name&&since>.8)speakIcon(x,cx,cy,s,t,true,W);};
   const board=boardFor(cur,M,done);
   if(M.type==='biz'||M.room==='biz'){
     const g=x.createLinearGradient(0,0,0,H*.62);g.addColorStop(0,'#e6e1d8');g.addColorStop(1,'#d3ccc0');x.fillStyle=g;x.fillRect(0,0,W,H*.62);
@@ -1670,12 +1677,12 @@ function mtgDraw(){
     const n=M.members.length,s=W*.03,seats=M.members.map((m,i)=>({m,cx:W*(.25+.5*(n===1?.5:i/(n-1))),cy:H*.7}));
     seats.forEach(({cx})=>{x.fillStyle='#26292e';rrect(x,cx-s*1.3,H*.7-s*5.2,s*2.6,s*3.4,s*.6);x.fill();});
     seats.forEach(({m,cx,cy},i)=>{const isS=spk&&m.name===spk.name&&!done,isR=re&&m.name===re.name;const lift=isS?s*1.3+Math.sin(t*3)*s*.08:Math.sin(t*1.3+i)*s*.06,nod=isR?Math.abs(Math.sin(t*6))*s*.2:0;
-      drawChibi(x,cx,cy-lift+nod,s,m.lk,{noRacket:true,shirt:personShirt(m),mood:isS||isR?'happy':'normal'});});
+      drawChibi(x,cx,cy-lift*.5+nod,s,m.lk,{noRacket:true,shirt:personShirt(m),mood:isS||isR?'happy':'normal'});});
     x.fillStyle='#6b4630';x.beginPath();x.moveTo(W*.12,H*.66);x.lineTo(W*.88,H*.66);x.lineTo(W*.95,H*.8);x.lineTo(W*.05,H*.8);x.closePath();x.fill();
     x.fillStyle='#4e3322';x.fillRect(W*.05,H*.8,W*.9,H*.04);
     seats.forEach(({m,cx})=>{x.fillStyle='#f4f4f2';x.fillRect(cx-s*1.2,H*.69,s*2.4,s*.9);x.fillStyle='#333';x.font=`700 ${Math.max(8,s*.6)}px "Zen Kaku Gothic New",sans-serif`;x.textAlign='center';x.fillText(m.name==='あなた'?ME():m.name.split(' ')[0],cx,H*.69+s*.7,s*2.3);
       x.fillStyle='#fff';x.fillRect(cx+s*1.4,H*.72,s*1.4,s*1.0);x.fillStyle='#e9e2d8';x.beginPath();x.ellipse(cx-s*1.8,H*.735,s*.35,s*.18,0,0,7);x.fill();});
-    seats.forEach(({m,cx,cy})=>{const isS=spk&&m.name===spk.name&&!done;bub(m,cx,cy-(isS?s*1.3:0),s);});
+    seats.forEach(({m,cx,cy})=>{const isS=spk&&m.name===spk.name&&!done;bub(m,cx,cy-(isS?s*.65:0),s);});
   } else {
     x.fillStyle='#d5ddd8';x.fillRect(0,0,W,H*.55);x.fillStyle='#c9a26b';x.fillRect(0,H*.55,W,H*.45);
     x.strokeStyle='rgba(120,80,40,.25)';for(let y=H*.58;y<H;y+=9){x.beginPath();x.moveTo(0,y);x.lineTo(W,y);x.stroke();}
@@ -1691,8 +1698,8 @@ function mtgDraw(){
     rows.forEach((r,ri)=>{const cy=H*(.8+ri*.16);x.fillStyle='#8a6a48';x.fillRect(W*.15,cy-s*.3,W*.7,s*.7);
       r.forEach((m,i)=>{const cx=W*(.25+.5*(r.length===1?.5:i/(r.length-1))),isS=spk&&m.name===spk.name&&!done,isR=re&&m.name===re.name;
         if(isS){drawChibi(x,cx,cy,s,m.lk,{noRacket:true,mood:'normal'});bub(m,cx,cy,s);}
-        else{drawChibi(x,cx,cy+s*.9-(isR?Math.abs(Math.sin(t*6))*s*.15:0),s,m.lk,{noRacket:true,back:true});if(isR&&since>.8)drawBubble(x,cx,cy-s*4.6,M.react.text,11,W);}});});
-    if(extra){drawChibi(x,W*.5,H*.66,s,extra.lk,{noRacket:true,mood:'normal'});drawBubble(x,W*.5,H*.66-s*5.4,(M.reply?M.reply.text:cur.text).slice(0,14)+'…',11,W);}
+        else{drawChibi(x,cx,cy+s*.9-(isR?Math.abs(Math.sin(t*6))*s*.15:0),s,m.lk,{noRacket:true,back:true});if(isR&&since>.8)speakIcon(x,cx,cy+s*.9,s,t,true,W);}});});
+    if(extra){drawChibi(x,W*.5,H*.66,s,extra.lk,{noRacket:true,mood:'normal'});speakIcon(x,W*.5,H*.66,s,t,false,W);}
   }
   return true;
 }
@@ -1717,8 +1724,9 @@ function autoBizMtg(silent){
 }
 
 /* ========== v1.1: version, settings, overseas, live individual ========== */
-const VERSION='1.3.0';
+const VERSION='1.3.1';
 const CHANGELOG=[
+  {v:'1.3.1',d:'2026-10-12',items:['会議やメンバー選考で、吹き出しがホワイトボードに重ならないように修正(話している人には「…」のマーク)']},
   {v:'1.3.0',d:'2026-10-12',items:['スカウトマンを雇えるように(選手タブ→スカウト)','担当地域と方針(即戦力・将来性・シングルス/ダブルス向きなど)を指定すると、毎週有望選手を見つけて報告','スカウトの推薦度(★)と「注目選手」の印']},
   {v:'1.2.0',d:'2026-10-12',items:['実業団チームを実在のチーム名に(S/Jリーグ2025シーズンの成績をもとに強さを設定)','練習メニューを監督に任せられるように(練習タブ)','大会ごとに、監督と一緒にメンバー選考会議を開けるように','日付が変わるときに、次の大会までの日数を表示','体育館タブに次の大会までのカウントダウン']},
   {v:'1.1.0',d:'2026-10-12',items:['設定画面を追加(右上の歯車)。セーブ・読み込みもここから','チーム名・選手名・体育館名を変更できるように','海外大会に出場できるように(日本代表・ランキング上位の選手)。賞金はドルで支払われ、円に換算して収入に','全日本総合・ランキングサーキット・社会人・海外大会を観戦して、作戦を指示できるように','スタート画面と体育館の見た目を一新']},
