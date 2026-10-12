@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">実業団物語</string>
+    <string name="title_activity_main">実業団物語</string>
+    <string name="package_name">jp.jitsugyodan.badminton</string>
+    <string name="custom_url_scheme">jp.jitsugyodan.badminton</string>
+</resources>

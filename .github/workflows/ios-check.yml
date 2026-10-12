@@ -1,0 +1,25 @@
+name: iPhoneアプリのビルド確認
+
+# 手動実行のみ。Macがなくても、iPhone版がエラーなく組み立てられるかを確認できます。
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: |
+          npm ci
+          npm run build
+          npx cap sync ios
+      - name: シミュレーター向けにビルド
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App \
+            -sdk iphonesimulator -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO build

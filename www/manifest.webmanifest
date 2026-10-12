@@ -1,0 +1,17 @@
+{
+  "name": "バドミントン実業団物語",
+  "short_name": "実業団物語",
+  "description": "バドミントン専用体育館の経営と実業団チームの運営を、実際のカレンダーで1日ずつ進める経営シミュレーション。",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#e9efeb",
+  "theme_color": "#2f6e52",
+  "icons": [
+    { "src": "icons/pwa-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/pwa-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/pwa-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

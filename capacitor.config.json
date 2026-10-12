@@ -1,0 +1,20 @@
+{
+  "appId": "jp.jitsugyodan.badminton",
+  "appName": "実業団物語",
+  "webDir": "www",
+  "backgroundColor": "#e9efeb",
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 900,
+      "launchAutoHide": true,
+      "backgroundColor": "#e9efeb",
+      "showSpinner": false
+    }
+  },
+  "android": {
+    "allowMixedContent": false
+  },
+  "ios": {
+    "contentInset": "never"
+  }
+}
