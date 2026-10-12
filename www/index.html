@@ -383,7 +383,7 @@ const IRN=['1回戦','2回戦','3回戦','準々決勝','準決勝','決勝'];
 const INC={prize:'賞金',intlPrize:'海外大会賞金',rental:'コート貸出',walk:'個人開放',member:'会員費',ad:'スポンサー広告',goods:'グッズ',stream:'配信',fund:'運用益',transferIn:'移籍金収入',loanIn:'借入',school:'スクール',host:'大会参加費',shop:'物販',string:'ガット張り',ticket:'入場料',support:'親会社支援',sponsor:'スポンサー',bonus:'報奨金'};
 const OUT={salary:'選手給与',bonusPay:'選手ボーナス',mgmt:'支配人・監督の報酬',loan:'借入返済',tax:'法人税等',transfer:'移籍金',staff:'アルバイト人件費',stock:'仕入れ',util:'光熱費',maint:'設備維持費',build:'設備投資',scout:'スカウト費',other:'大会運営・遠征・その他'};
 const INV={shuttle:{n:'シャトル',u:'ダース',cost:3000,mkt:3800,min:30,tgt:90,shop:true},grip:{n:'グリップテープ',u:'本',cost:250,mkt:450,min:20,tgt:60,shop:true},drink:{n:'スポーツドリンク(自販機)',u:'本',cost:60,mkt:160,min:80,tgt:300,shop:false},string:{n:'ストリング(張り替え用)',u:'張',cost:900,mkt:0,min:10,tgt:30,shop:false}};
-const ROLE={booking:{n:'予約管理',d:'翌日の予約申込を方針どおりに自動で承認。★が多いほど取りこぼしが少ない',w:120000},stock:{n:'在庫管理',d:'在庫が発注ラインを下回ると自動で発注',w:90000},stringer:{n:'ガット張り',d:'1日に張れる本数が増える(★1つにつき+2本)',w:110000},trainer:{n:'トレーナー',d:'ケガの予防と早期回復。★が多いほど効果大',w:200000},coach:{n:'コーチ',d:'練習の伸びが★1つにつき+6%',w:250000}};
+const ROLE={booking:{n:'予約管理',d:'翌日の予約申込を方針どおりに自動で承認。★が多いほど取りこぼしが少ない',w:120000},stock:{n:'在庫管理',d:'在庫が発注ラインを下回ると自動で発注',w:90000},stringer:{n:'ガット張り',d:'1日に張れる本数が増える(★1つにつき+2本)',w:110000},trainer:{n:'トレーナー',d:'ケガの予防と早期回復。★が多いほど効果大',w:200000},coach:{n:'コーチ',d:'練習の伸びが★1つにつき+6%',w:250000},scout:{n:'スカウト',d:'毎週、担当地域を回って有望選手を探して報告する',w:180000}};
 const HOSTK={open:{n:'市民オープン大会',fee:3000,base:60,u:'組'},junior:{n:'ジュニア大会',fee:1500,base:80,u:'人'},senior:{n:'シニア交流大会',fee:2500,base:50,u:'組'}};
 const WK=[.45,.5,.45,.25,.22,.25,.3,.4,.62,.85,.95,.9,.55], HO=[.7,.85,.9,.85,.82,.85,.82,.75,.65,.6,.55,.45,.3];
 const SAVE='hakyukan-v1';
@@ -747,8 +747,9 @@ function migrate(){
   S.settings=S.settings||{theme:'auto'};applyTheme();
   if(!S.realT&&S.league){realizeLeague(S.league);S.realT=1;}
   if(S.deleg.sel===undefined)S.deleg.sel=true;
+  if(!S.scoutCands)S.scoutCands=[genScout(),genScout()];
 }
-function genCands(){return Array.from({length:4},()=>{const role=pick(Object.keys(ROLE)),sk=RI(1,5),g=pick(['M','F']);return {id:'s'+(S.nid++),g,name:pname(g),lk:genLook(g,RI(19,45)),role,skill:sk,wage:ROLE[role].w+(sk-1)*15000};});}
+function genCands(){return Array.from({length:4},()=>{const role=pick(Object.keys(ROLE).filter(k=>k!=='scout')),sk=RI(1,5),g=pick(['M','F']);return {id:'s'+(S.nid++),g,name:pname(g),lk:genLook(g,RI(19,45)),role,skill:sk,wage:ROLE[role].w+(sk-1)*15000};});}
 function sell(item,want){const v=S.inv[item],w=Math.max(0,Math.round(want)),n=Math.min(v.q,w);v.q-=n;return {n,lost:w-n};}
 const invCost=(k,q)=>Math.round(INV[k].cost*q*(q>=100?.9:q>=50?.95:1)*(S.supply&&(k==='shuttle'||k==='string')?1-S.supply.disc:1));
 function orderItem(k,q){const c=invCost(k,q);spend('stock',c);S.orders.push({item:k,q,arrive:addD(S.today.date,1)});return c;}
@@ -854,7 +855,7 @@ function advanceDay(){
   const t=S.tmr; if(!t)return;
   const date=t.date, hostDay=S.hosted.some(h=>h.date===date);
   S.orders=S.orders.filter(o=>{if(o.arrive<=date){S.inv[o.item].q+=o.q;return false;}return true;});
-  if(dow(date)===1){S.cands=genCands();S.pmCands=genPmCands();}
+  if(dow(date)===1){S.cands=genCands();S.pmCands=genPmCands();scoutWeek();}
   advReal(date);
   S.hosted=S.hosted.filter(h=>!h.done||h.date>=addD(date,-1));
   if(S.gym.build&&date>=S.gym.build.done){S.gym.courts=S.gym.build.to;S.gym.build=null;log(`増築工事が完了!コートが${S.gym.courts}面になりました`);}
@@ -991,12 +992,12 @@ function resolveOffer(x){
 const potGrade=v=>v>=88?'S':v>=78?'A':v>=68?'B':'C';
 
 /* ========== conversations ========== */
-const TMOOD={report:'normal',poach:'worry',maker:'happy',retire:'normal',transfer:'worry',marry:'happy',baby:'happy',exec:'normal',news:'worry',nat:'happy',tired:'worry',wantPro:'normal',raise:'worry',conf:'happy',slump:'sad',pair:'happy',chat:'happy',inj:'sad',greet:'happy',stock:'worry',info:'happy',priceUp:'worry',staffRaise:'worry',cExtra:'normal',cReg:'happy',cPrice:'angry',cHeat:'angry',cSchool:'normal',cFan:'wow',cLost:'worry',cShop:'normal'};
+const TMOOD={scoutRep:'happy',report:'normal',poach:'worry',maker:'happy',retire:'normal',transfer:'worry',marry:'happy',baby:'happy',exec:'normal',news:'worry',nat:'happy',tired:'worry',wantPro:'normal',raise:'worry',conf:'happy',slump:'sad',pair:'happy',chat:'happy',inj:'sad',greet:'happy',stock:'worry',info:'happy',priceUp:'worry',staffRaise:'worry',cExtra:'normal',cReg:'happy',cPrice:'angry',cHeat:'angry',cSchool:'normal',cFan:'wow',cLost:'worry',cShop:'normal'};
 const PRIO=['exec','report','retire','transfer','poach','marry','baby','maker','nat','news','stock','inj','greet','tired','info'];
 function whoInfo(w){
   if(!w)return null;
   if(w.t==='p'){const p=P(w.id);return p?{name:p.name,role:(p.ct==='pro'?'プロ契約':'社員選手')+'・'+TRAITS[p.tr],lk:p.lk,mood:moodOf(p),p}:null;}
-  if(w.t==='s'){const s=S.staff.find(x=>x.id===w.id);return s?{name:s.name,role:'アルバイト・'+ROLE[s.role].n,lk:lookOf(s),mood:'normal'}:null;}
+  if(w.t==='s'){const s=S.staff.find(x=>x.id===w.id);return s?{name:s.name,role:s.role==='scout'?'スカウトマン・'+'★'.repeat(s.skill):'アルバイト・'+ROLE[s.role].n,lk:lookOf(s),mood:'normal'}:null;}
   if(w.t==='mgr')return S.mgr?{name:S.mgr.name,role:'支配人',lk:S.mgr.lk,mood:'normal'}:null;
   if(w.t==='hc')return S.hc?{name:S.hc.name,role:'監督・'+HCSTYLE[S.hc.style],lk:S.hc.lk,mood:'normal'}:null;
   if(w.t==='exec')return {name:S.exec.name,role:'親会社 スポーツ担当役員',lk:S.exec.lk,mood:S.crisis?'worry':'normal'};
@@ -1121,6 +1122,7 @@ function _resolve(t,i){
     case 'news':return R2(i===0?'ですね!私たちも頑張ります!':'はい!接客なら負けません!','happy');
     case 'nat':p.sat+=5;return R2(i===0?say(p,'yes'):'はい!経験を持ち帰ってチームに還元します!','happy');
     case 'report':return R2(pick(['お任せください。','はい、引き続き頑張ります。']),'happy');
+    case 'scoutRep':return resolveScoutTalk(t,i);
     case 'cShop':return R2(i===0?'できたら絶対買います!':'わかりました〜','normal');
   }
   return R2('','normal');
@@ -1420,7 +1422,7 @@ function advMoney(date){
   if(S.subApp&&!S.subApp.done&&date>=S.subApp.due){S.subApp.done=true;const pr=clamp(.3+S.rep/200+S.results.filter(x=>x.name.includes('主催')).length*.05+(S.gym.cond<60?.15:0),.1,.85);
     if(Math.random()<pr){const a=RI(10,50)*100000;S.subCredit+=a;S.pendTalks.push({kind:'news',who:{t:'clerk'},text:`店長!自治体の補助金、採択されたそうです!${man(a)}を改修や設備に使えます!`,ch:['やった!助かる!']});log(`施設整備補助 ${man(a)} が採択されました`);}
     else log('施設整備補助は今回は不採択でした');}
-  if(date.slice(8)==='01'){S.mgrCands=[genBoss('mgr'),genBoss('mgr'),genBoss('mgr')];S.hcCands=[genBoss('hc'),genBoss('hc'),genBoss('hc')];}
+  if(date.slice(8)==='01'){S.mgrCands=[genBoss('mgr'),genBoss('mgr'),genBoss('mgr')];S.hcCands=[genBoss('hc'),genBoss('hc'),genBoss('hc')];S.scoutCands=[genScout(),genScout()];}
   const mo=+date.slice(5,7);if(mo<=3&&(dow(date)===1||!S.market.length))genMarket();if(mo>3&&S.market.length)S.market=[];
   S.players.forEach(p=>{if(p.maker&&p.maker.until<=date){log(`${p.name}と${p.maker.n}の個人契約が満了しました`);p.maker=null;}});
   if(S.supply&&S.supply.until<=date){log(`${S.supply.maker}との用具提供契約が満了しました`);S.supply=null;}
@@ -1760,8 +1762,9 @@ function autoBizMtg(silent){
 }
 
 /* ========== v1.1: version, settings, overseas, live individual ========== */
-const VERSION='1.2.0';
+const VERSION='1.3.0';
 const CHANGELOG=[
+  {v:'1.3.0',d:'2026-10-12',items:['スカウトマンを雇えるように(選手タブ→スカウト)','担当地域と方針(即戦力・将来性・シングルス/ダブルス向きなど)を指定すると、毎週有望選手を見つけて報告','スカウトの推薦度(★)と「注目選手」の印']},
   {v:'1.2.0',d:'2026-10-12',items:['実業団チームを実在のチーム名に(S/Jリーグ2025シーズンの成績をもとに強さを設定)','練習メニューを監督に任せられるように(練習タブ)','大会ごとに、監督と一緒にメンバー選考会議を開けるように','日付が変わるときに、次の大会までの日数を表示','体育館タブに次の大会までのカウントダウン']},
   {v:'1.1.0',d:'2026-10-12',items:['設定画面を追加(右上の歯車)。セーブ・読み込みもここから','チーム名・選手名・体育館名を変更できるように','海外大会に出場できるように(日本代表・ランキング上位の選手)。賞金はドルで支払われ、円に換算して収入に','全日本総合・ランキングサーキット・社会人・海外大会を観戦して、作戦を指示できるように','スタート画面と体育館の見た目を一新']},
   {v:'1.0.0',d:'2026-10-12',items:['アプリ版を公開']},
@@ -2060,6 +2063,50 @@ function dayFlip(){
 }
 function countdownCard(){const ev=nextEv();if(!ev)return '';const n=dBetween(S.today.date,ev.date);return `<section class="card cd"><div class="cd-n">${n===0?'<b>今日</b>':`あと<b>${n}</b>日`}</div><div class="grow" style="min-width:0"><div class="sub">${n===0?'本日の大会':'次の大会'}・${fmtShort(ev.date)}</div><div class="cd-ev">${esc(ev.name)}</div></div></section>`;}
 
+/* ========== v1.3: scouts ========== */
+const SCPOL={bal:'バランス',now:'即戦力',future:'将来性',dbl:'ダブルス向き',sgl:'シングルス向き'};
+const SCCAREER=['元高校の名監督','元実業団選手','大学バドミントン部OB','元日本代表コーチ','地方協会の強化委員','元スポーツ記者'];
+function genScout(){const g=pick(['M','F']),sk=RI(1,5),age=RI(32,66);return {id:'s'+(S.nid++),g,name:pname(g),lk:genLook(g,age),age,role:'scout',skill:sk,wage:ROLE.scout.w+(sk-1)*30000,reg:'all',pol:'bal',career:pick(SCCAREER),home:pick(REGIONS)};}
+const scouts=()=>S.staff.filter(s=>s.role==='scout');
+function scoutScore(s,p){const o=ovr(p);switch(s.pol){case 'now':return o*1.4+p.pot*.3;case 'future':return p.pot*1.3-(p.age-18)*3+o*.3;case 'dbl':return drRaw(p)*1.2+(p.style==='D'?8:0)+p.pot*.4;case 'sgl':return srRaw(p)*1.2+(p.style==='S'?8:0)+p.pot*.4;default:return o+p.pot*.6;}}
+function scoutWeek(){
+  scouts().forEach(s=>{
+    const r=s.reg==='all'?pick(REGIONS):s.reg,n=1+Math.ceil(s.skill/2),cands=[];
+    for(let i=0;i<n;i++){const x=newProspect(r);if(s.pol==='now'&&x.p.age===18&&Math.random()<.6)continue;if(s.pol==='future'&&x.p.age>22&&Math.random()<.7)continue;cands.push(x);}
+    if(!cands.length)cands.push(newProspect(r));
+    const best=cands.sort((a,b)=>scoutScore(s,b.p)-scoutScore(s,a.p))[0];
+    best.acc=clamp(1+Math.floor(s.skill/2),1,3);best.by=s.id;
+    const err=(5-s.skill)*R(-4,4),q=scoutScore(s,best.p)+err,base=({bal:95,now:100,future:105,dbl:95,sgl:95}[s.pol]||95)+6;
+    best.rec=q>base+18?3:q>base?2:1;
+    S.pros.unshift(best);
+    S.pros.filter(x=>x.region===r&&x.status==='open'&&x.acc<3&&x!==best).slice(0,1).forEach(x=>x.acc++);
+    const open=S.pros.filter(x=>x.status==='open'&&!x.fav);if(open.length>12){const drop=open.slice(12);S.pros=S.pros.filter(x=>!drop.includes(x));}
+    s.last={d:S.today.date,txt:`${r}で${best.p.name}(${best.aff})を発見・推薦度${'★'.repeat(best.rec)}`};
+    if(Math.random()<[0,.15,.6,1][best.rec]&&!S.pendTalks.some(t=>t.kind==='scoutRep')){
+      const p=best.p,strong=SK.reduce((a,k)=>p.st[k]>p.st[a]?k:a,'sm');
+      const txt=best.rec===3?`${r}ですごい選手を見つけました!${best.aff}の${p.name}。${SKN[strong]}が抜群で、${p.age<=18?'まだまだ伸びます。':'すぐにでも戦力になります。'}ぜひ獲りに行きましょう!`:best.rec===2?`${r}を回ってきました。${best.aff}の${p.name}が面白いです。${STY[p.style]}で、${SKN[strong]}に光るものがあります。`:`${r}を見てきましたが、今週は目立つ選手が少なかったです。一応${best.aff}の${p.name}をリストに入れておきました。`;
+      S.pendTalks.push({kind:'scoutRep',who:{t:'s',id:s.id},text:txt,ch:best.rec>=2?['注目選手にしておこう','引き続き頼む']:['ご苦労さま','担当地域を変えてみようか'],data:{xid:best.id,rec:best.rec}});
+    }
+  });
+}
+function resolveScoutTalk(t,i){
+  const s=S.staff.find(x=>x.id===t.who.id),x=S.pros.find(y=>y.id===(t.data||{}).xid);
+  if((t.data||{}).rec>=2){if(i===0&&x){x.fav=true;return {reply:'了解です!オファーを出すなら早めがいいですよ。選手タブのスカウトで確認できます。',mood:'happy'};}return {reply:'任せてください。来週も回ってきます。',mood:'happy'};}
+  if(i===1&&s){const others=REGIONS.filter(r=>r!==s.reg);s.reg=pick(others);return {reply:`では、来週からは${s.reg}を重点的に回ってみます。`,mood:'normal'};}
+  return {reply:'はい、来週も頑張ります。',mood:'normal'};
+}
+function scoutSec(){
+  const L=scouts(),C=S.scoutCands||[];
+  return `<section class="card"><h3>スカウトマン <span class="sub">${L.length}/2人</span></h3>
+  <p class="note">スカウトマンは毎週月曜に担当地域を回り、方針に合った有望選手を見つけて報告してくれます。★が多いほど見る目が確かで、評価精度も高い状態でリストに入ります。</p>
+  ${L.map(s=>`<div class="card" style="margin-top:8px;background:var(--panel2)"><div class="row"><span class="av">${faceSVG(s.lk,'normal',44)}</span><div class="grow" style="min-width:0"><b>${esc(s.name)}</b> ${'★'.repeat(s.skill)}<br><span class="sub">${esc(s.career||'スカウト')}・月給 ${man(s.wage)}</span></div></div>
+    <div class="grid2" style="margin-top:8px"><label class="sub">担当地域<select id="scr-${s.id}" data-c="scReg" data-id="${s.id}" style="width:100%">${['all'].concat(REGIONS).map(r=>`<option value="${r}" ${s.reg===r?'selected':''}>${r==='all'?'全国をまわる':r}</option>`).join('')}</select></label>
+    <label class="sub">方針<select id="scp-${s.id}" data-c="scPol" data-id="${s.id}" style="width:100%">${Object.entries(SCPOL).map(([k,v])=>`<option value="${k}" ${s.pol===k?'selected':''}>${v}</option>`).join('')}</select></label></div>
+    ${s.last?`<p class="note" style="margin-top:6px">前回(${fmtShort(s.last.d)}):${esc(s.last.txt)}</p>`:'<p class="note" style="margin-top:6px">次の月曜から活動を始めます。</p>'}</div>`).join('')}
+  ${L.length<2?`<h3 style="margin-top:12px">スカウトマンの候補 <span class="sub">毎月1日に入れ替わり</span></h3>${C.map(c=>`<div class="fac"><div class="row"><span class="av">${faceSVG(c.lk,'normal',34)}</span><span><b>${esc(c.name)}</b> ${'★'.repeat(c.skill)}${'☆'.repeat(5-c.skill)}<br><span class="sub">${c.age}歳・${esc(c.career)}・${c.home}出身</span></span></div><button class="btn sm primary" data-a="hireScout" data-id="${c.id}">雇う ${man(c.wage)}/月</button></div>`).join('')||'<p class="note">今月の候補はもういません</p>'}`:''}
+  </section>`;
+}
+
 /* ========== save ========== */
 function save(){if(!S)return;const t=JSON.stringify(S);try{localStorage.setItem(SAVE,t);}catch(e){}try{window.__nativeSave&&window.__nativeSave(SAVE,t);}catch(e){}}
 /* ========== save data: slots / export / import ========== */
@@ -2205,15 +2252,15 @@ function vTeam(){
   }
   if(UI.teamTab==='trade')return seg+tradeView();
   const done=r=>S.scoutDays[r]===S.today.date;
-  const pros=S.pros.filter(x=>x.status!=='declined'||x.join);
-  return seg+`<section class="card"><h3>地域を視察する <span class="sub">1回 ¥250,000</span></h3><div class="regions">${REGIONS.map(r=>`<button class="btn sm" data-a="scout" data-r="${r}" ${done(r)?'disabled':''}>${r}</button>`).join('')}</div>
+  const pros=S.pros.filter(x=>x.status!=='declined'||x.join).sort((a,b)=>(b.fav?1:0)-(a.fav?1:0));
+  return seg+scoutSec()+`<section class="card"><h3>自分で地域を視察する <span class="sub">1回 ¥250,000</span></h3><div class="regions">${REGIONS.map(r=>`<button class="btn sm" data-a="scout" data-r="${r}" ${done(r)?'disabled':''}>${r}</button>`).join('')}</div>
   <p class="hint" style="margin-top:10px">同じ地域を何度も視察すると選手の評価精度が上がります。高校・大学生は内定後、4月1日に入社。移籍希望の社会人はすぐ合流します。</p></section>
   <div class="list">${pros.map(prCard).join('')||'<p class="note">まだ候補選手がいません。地域を視察しましょう。</p>'}</div>`;
 }
 function prCard(x){
   const o=ovr(x.p), e=12-x.acc*4;
   const st=x.status==='offered'?`<span class="pill warn">返事待ち ${fmtShort(x.offer.due)}</span>`:x.status==='signed'?'<span class="pill good">内定</span>':x.status==='declined'?'<span class="pill bad">辞退</span>':`<button class="btn sm primary" data-a="offer" data-id="${x.id}">オファー</button>`;
-  return `<div class="card"><div class="row"><span class="av">${faceSVG(x.p.lk,'normal',40)}</span><b class="grow">${esc(x.p.name)}</b>${st}</div>
+  return `<div class="card"><div class="row"><span class="av">${faceSVG(x.p.lk,'normal',40)}</span><b class="grow">${esc(x.p.name)}${x.fav?' <span class="pill warn">注目</span>':''}</b>${st}</div>${x.rec?`<div class="sub" style="color:var(--accent);font-weight:700">スカウト推薦度 ${'★'.repeat(x.rec)}${'☆'.repeat(3-x.rec)}${(()=>{const sc=S.staff.find(y=>y.id===x.by);return sc?`(${esc(sc.name)})`:'';})()}</div>`:''}
   <div class="sub">${esc(x.aff)}・${x.p.age}歳・${x.region}</div>
   <div class="row" style="margin-top:6px;font-size:13px"><span>推定OVR <b class="num">${x.acc>=3?o:`${Math.max(20,o-e)}–${o+e}`}</b></span><span>伸びしろ <b>${x.acc>=2?potGrade(x.p.pot):'?'}</b></span><span>${x.acc>=1?STY[x.p.style]:'タイプ ?'}</span><span>${x.acc>=1?(x.p.wantPro?'プロ志望':'社員選手も可'):'志望 ?'}</span></div>
   <div class="note">評価精度 ${'●'.repeat(x.acc)}${'○'.repeat(3-x.acc)}</div></div>`;
@@ -2812,6 +2859,7 @@ const ACT={
   startLoad:()=>{UI.slotAsk=null;UI.exp=null;UI.impMsg=null;saveSheet();},
   resetYes:()=>{try{localStorage.removeItem(SAVE);}catch(e){}try{window.__nativeSave&&window.__nativeSave(SAVE,'');}catch(e){}S=null;UI.rel=null;UI.tab='gym';$('#view').innerHTML='';$('#hdr').innerHTML='';openStart();},
   week:()=>weekSkip(),
+  hireScout:d=>{const c=(S.scoutCands||[]).find(x=>x.id===d.id);if(!c)return;if(scouts().length>=2)return toast('スカウトマンは2人までです');c.since=S.today.date;S.staff.push(c);S.scoutCands=S.scoutCands.filter(x=>x!==c);log(`${c.name}をスカウトマンとして雇いました`);S.talks.unshift({id:'k'+(S.nid++),kind:'info',who:{t:'s',id:c.id},text:`${c.name}です。${c.career}の経験を活かして、いい選手を見つけてきます!担当地域と方針を決めてください。`,ch:['よろしく頼む'],data:{}});save();render();toast(`${c.name}を雇いました`);},
   mtgOpen:d=>{if(d.v==='biz'){if(!S.mgr&&!S.hc)return;const w=S.mgr?spk('mgr'):spk('hc');openSheet(`<div class="sheet-head"><div><div class="sub">月例</div><h2>経営会議</h2></div><button class="x" data-a="closeSheet" aria-label="閉じる">×</button></div>${talkHTML(w,`会議室の準備ができました。${ME()}も出席されますか?`,'normal','')}<div class="list"><button class="btn primary big" data-a="mtgBizGo">出席する</button><button class="btn" data-a="mtgBizAuto">${S.mgr&&S.hc?'支配人と監督':S.mgr?'支配人':'監督'}に任せる</button></div>`);return;}if(S.hc){openSheet(`<div class="sheet-head"><div><div class="sub">監督主催</div><h2>チームミーティング</h2></div><button class="x" data-a="closeSheet" aria-label="閉じる">×</button></div>${talkHTML(spk('hc'),`今月のミーティングを開きます。${ME()}も参加されますか?`,'normal','')}<div class="list"><button class="btn primary big" data-a="mtgAttend">${ME()}として参加する</button><button class="btn" data-a="mtgSkip">監督に任せる</button></div>`);return;}startMtg(teamMeeting(false));},
   mtgAttend:()=>startMtg(teamMeeting(true)),
   mtgBizGo:()=>startMtg(bizMeeting()),
@@ -2879,6 +2927,8 @@ const CH={
   indS:(v,d,el)=>{const id=d.id;if(el.checked){if(IND.s.length>=3){el.checked=false;return toast('シングルスは3名まで');}IND.s.push(id);}else IND.s=IND.s.filter(x=>x!==id);},
   indD:(v,d)=>{IND.d[d.i][d.j]=v;},
   impFile:(v,d,el)=>{const f=el.files&&el.files[0];if(!f)return;const r=new FileReader();r.onload=()=>doImport(String(r.result||''));r.onerror=()=>{UI.impMsg='ファイルを読めませんでした。';UI.impOk=false;saveSheet();};r.readAsText(f);},
+  scReg:(v,d)=>{const s=S.staff.find(x=>x.id===d.id);if(s){s.reg=v;save();}},
+  scPol:(v,d)=>{const s=S.staff.find(x=>x.id===d.id);if(s){s.pol=v;save();}},
   pshare:v=>{S.prizeShare=+v;save();},
   priceOff:v=>{S.gym.priceOff=+v;save();},
   memFee:v=>{S.gym.memFee=+v;save();},
