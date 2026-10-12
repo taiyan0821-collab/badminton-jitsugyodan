@@ -45,8 +45,9 @@ img{max-width:100%}
 body{background:var(--bg);color:var(--ink);font-family:var(--fb);font-size:15px;line-height:1.55;-webkit-tap-highlight-color:transparent}
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
 .top-in{max-width:760px;margin:0 auto;padding:10px 16px;display:flex;justify-content:space-between;gap:12px;align-items:center}
-.brand{font-family:var(--fd);font-size:16px;color:var(--mat);line-height:1.2}
-.hd-team{font-size:11.5px;color:var(--muted)}
+.brand{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--fd);font-size:15px;color:var(--mat);line-height:1.2}
+.hd-team{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-in>div:first-child{min-width:0;flex:1}
 .hd-r{text-align:right}
 .hd-date{font-size:13px;font-weight:700}
 .hol{margin-left:6px;font-size:11px;color:var(--accent);font-weight:700}
@@ -239,6 +240,15 @@ tr.me td{font-weight:700;background:color-mix(in srgb,var(--mat) 10%,transparent
 .mtg-line{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
 .mtg-line p{margin:8px 0 4px;font-size:15px;line-height:1.7}
 textarea.code{width:100%;min-height:90px;margin-top:8px;font:12px/1.4 var(--fm);padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);color:var(--ink);word-break:break-all;resize:vertical}
+.gear{appearance:none;border:1px solid var(--line);background:var(--panel);color:var(--ink);width:38px;height:38px;border-radius:12px;display:grid;place-items:center;cursor:pointer;flex:none}
+.gear:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.title-wrap{position:relative;margin:-18px -16px 0;border-radius:16px 16px 0 0;overflow:hidden}
+.title-wrap canvas{display:block;width:100%}
+.title-logo{position:absolute;left:0;right:0;top:31%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:none}
+.tl-sub{font:700 11px var(--fm);letter-spacing:.3em;color:#7a4a1c;background:rgba(255,255,255,.85);padding:2px 10px;border-radius:99px}
+.tl-main{font-family:var(--fd);font-size:clamp(28px,8.5vw,44px);line-height:1.15;text-align:center;color:#2f6e52;-webkit-text-stroke:6px #fff;paint-order:stroke fill;text-shadow:0 4px 0 rgba(0,0,0,.12)}
+.title-lead{font-size:14px;margin:0;text-align:center}
+ul.chg{margin:4px 0 8px;padding-left:1.2em;font-size:13px;line-height:1.7}
 @media (prefers-reduced-motion: reduce){*{scroll-behavior:auto}}
 </style>
 
@@ -349,7 +359,7 @@ const FMT={sj:[{k:'D',l:'第1ダブルス'},{k:'S',l:'シングルス'},{k:'D',l
   jit:[{k:'D',l:'第1ダブルス'},{k:'S',l:'第1シングルス'},{k:'D',l:'第2ダブルス'},{k:'S',l:'第2シングルス'},{k:'S',l:'第3シングルス'}]};
 const JRN=['1回戦','2回戦','準々決勝','準決勝','決勝'];
 const IRN=['1回戦','2回戦','3回戦','準々決勝','準決勝','決勝'];
-const INC={prize:'賞金',rental:'コート貸出',walk:'個人開放',member:'会員費',ad:'スポンサー広告',goods:'グッズ',stream:'配信',fund:'運用益',transferIn:'移籍金収入',loanIn:'借入',school:'スクール',host:'大会参加費',shop:'物販',string:'ガット張り',ticket:'入場料',support:'親会社支援',sponsor:'スポンサー',bonus:'報奨金'};
+const INC={prize:'賞金',intlPrize:'海外大会賞金',rental:'コート貸出',walk:'個人開放',member:'会員費',ad:'スポンサー広告',goods:'グッズ',stream:'配信',fund:'運用益',transferIn:'移籍金収入',loanIn:'借入',school:'スクール',host:'大会参加費',shop:'物販',string:'ガット張り',ticket:'入場料',support:'親会社支援',sponsor:'スポンサー',bonus:'報奨金'};
 const OUT={salary:'選手給与',bonusPay:'選手ボーナス',mgmt:'支配人・監督の報酬',loan:'借入返済',tax:'法人税等',transfer:'移籍金',staff:'アルバイト人件費',stock:'仕入れ',util:'光熱費',maint:'設備維持費',build:'設備投資',scout:'スカウト費',other:'大会運営・遠征・その他'};
 const INV={shuttle:{n:'シャトル',u:'ダース',cost:3000,mkt:3800,min:30,tgt:90,shop:true},grip:{n:'グリップテープ',u:'本',cost:250,mkt:450,min:20,tgt:60,shop:true},drink:{n:'スポーツドリンク(自販機)',u:'本',cost:60,mkt:160,min:80,tgt:300,shop:false},string:{n:'ストリング(張り替え用)',u:'張',cost:900,mkt:0,min:10,tgt:30,shop:false}};
 const ROLE={booking:{n:'予約管理',d:'翌日の予約申込を方針どおりに自動で承認。★が多いほど取りこぼしが少ない',w:120000},stock:{n:'在庫管理',d:'在庫が発注ラインを下回ると自動で発注',w:90000},stringer:{n:'ガット張り',d:'1日に張れる本数が増える(★1つにつき+2本)',w:110000},trainer:{n:'トレーナー',d:'ケガの予防と早期回復。★が多いほど効果大',w:200000},coach:{n:'コーチ',d:'練習の伸びが★1つにつき+6%',w:250000}};
@@ -412,13 +422,14 @@ function calendar(Y){
   ev.push({date:`${Y+1}-05-23`,type:'indiv',key:'circuit',name:'日本ランキングサーキット',lv:[53,58,63,67,71,75]});
   ['17','18','19','20','21'].forEach((d,i)=>ev.push({date:`${Y+1}-06-${d}`,type:'jit',round:i,name:`全日本実業団選手権 ${JRN[i]}`,lv:[52,57,62,67,72][i]}));
   ev.push({date:`${Y+1}-09-12`,type:'indiv',key:'shakai',name:'全日本社会人選手権',lv:[48,53,58,63,67,71]});
+  intlEvents(Y).forEach(e=>ev.push(e));
   return ev.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
 }
 function jitShow(e){const Y=seasonOf(e.date);if(!S.jit||S.jit.season!==Y)return e.round===0;return S.jit.alive&&e.round>=S.jit.round;}
-function eventOn(date){return calendar(seasonOf(date)).find(e=>e.date===date&&(e.type!=='jit'||(S.jit&&S.jit.season===seasonOf(date)&&S.jit.alive&&S.jit.round===e.round)))||null;}
+function eventOn(date){return calendar(seasonOf(date)).find(e=>e.date===date&&(!e.intl||indPool(e).length>0)&&(e.type!=='jit'||(S.jit&&S.jit.season===seasonOf(date)&&S.jit.alive&&S.jit.round===e.round)))||null;}
 function upcoming(n){
   const Y=seasonOf(S.today.date), t=S.today.date;
-  return calendar(Y).concat(calendar(Y+1)).filter(e=>(e.date>t||(e.date===t&&!S.today.matchDone))&&(e.type!=='jit'||jitShow(e))).slice(0,n);
+  return calendar(Y).concat(calendar(Y+1)).filter(e=>(e.date>t||(e.date===t&&!S.today.matchDone))&&(e.type!=='jit'||jitShow(e))&&(!e.intl||S.players.some(p=>eligible(e,p)))).slice(0,n);
 }
 function standings(){const t=S.league.table;return t.map((_,i)=>i).sort((a,b)=>t[b].w-t[a].w||(t[b].mw-t[b].ml)-(t[a].mw-t[a].ml));}
 
@@ -712,6 +723,7 @@ function migrate(){
   if(!S.clerk){const g=pick(['M','F']);S.clerk={name:pname(g),lk:genLook(g,22)};}
   S.talks=S.talks||[];
   migrateReal();
+  S.settings=S.settings||{theme:'auto'};applyTheme();
 }
 function genCands(){return Array.from({length:4},()=>{const role=pick(Object.keys(ROLE)),sk=RI(1,5),g=pick(['M','F']);return {id:'s'+(S.nid++),g,name:pname(g),lk:genLook(g,RI(19,45)),role,skill:sk,wage:ROLE[role].w+(sk-1)*15000};});}
 function sell(item,want){const v=S.inv[item],w=Math.max(0,Math.round(want)),n=Math.min(v.q,w);v.q-=n;return {n,lost:w-n};}
@@ -928,23 +940,6 @@ function finishLeague(){
   S.results.unshift({date:S.today.date,name:`${divName(L.div)} 最終順位`,txt,win:rank<=3});
   log(`${divName(L.div)}全日程終了:${txt}`);
   crisisCheck(rank);sponsorRankCheck(rank);
-}
-function runIndiv(ev,entries){
-  return entries.map(en=>{
-    const A=en.ids.map(P), lg=[]; let r=0;
-    for(;r<ev.lv.length;r++){
-      const lv=ev.lv[r]+R(-3,3), B=en.k==='S'?[genOpp(lv)]:[genOpp(lv),genOpp(lv)];
-      const m=simMatch(A,B,en.k);
-      lg.push({rd:IRN[r],opp:B.map(x=>x.name).join('/'),sc:m.games.map(g=>`${g.a}-${g.b}`).join(' '),win:m.win});
-      A.forEach(p=>{p.fat+=7;m.win?p.w++:p.l++;if(m.win)p.fans=(p.fans||0)+60;});
-      if(!m.win)break;
-    }
-    const best=r>=ev.lv.length?'優勝':r===ev.lv.length-1?'準優勝':IRN[r]+'敗退';
-    A.forEach(p=>p.rp=(p.rp||0)+(PTS[ev.key]||PTS.shakai)[Math.min(r,6)]);
-    S.fame+=r*1.2+(best==='優勝'?6:0);
-    const prize=payPrize((PRZ[ev.key]||PRZ.shakai)[Math.min(r,6)],A,r>=3?`${ev.name}(${A.map(p=>p.name).join('/')}・${best})`:'');
-    return {k:en.k,names:A.map(p=>p.name).join(' / '),lg,best,prize};
-  });
 }
 
 /* ========== scouting ========== */
@@ -1464,8 +1459,8 @@ function vBiz(){const t=UI.bizTab||'main';return `<div class="seg">${[['main','�
 
 const PRZ={sogo:[0,0,50000,100000,250000,500000,1000000],circuit:[0,0,30000,60000,120000,250000,500000],shakai:[0,0,20000,40000,80000,150000,300000]};
 const LPRZ={1:[5000000,3000000,1500000],2:[2000000,1000000,500000]};
-function payPrize(amt,players,label){
-  if(!amt)return 0;const sh=S.prizeShare||0,team=Math.round(amt*(1-sh));earn('prize',team);
+function payPrize(amt,players,label,key){
+  if(!amt)return 0;const sh=S.prizeShare||0,team=Math.round(amt*(1-sh));earn(key||'prize',team);
   if(sh&&players.length){const each=amt*sh/players.length;players.forEach(p=>p.sat=clamp(p.sat+Math.min(10,each/40000),0,100));}
   if(label)log(`${label}で賞金 ${man(amt)}${sh?`(うち${Math.round(sh*100)}%を選手に分配)`:''}`);
   return amt;
@@ -1499,10 +1494,10 @@ const gymAuto=()=>!!(S.deleg&&S.deleg.gym&&S.mgr), teamAuto=()=>!!(S.deleg&&S.de
 function hcMenu(date){const m=menuFor(date);if(m.m==='off')return m;const h=S.players.filter(p=>!unav(p)),af=sum(h.map(p=>p.fat))/Math.max(1,h.length);if(af>70)return {m:'off',i:1};if(af>55||eventOn(addD(date,1)))return {...m,i:0};return m;}
 function hcPick(ms){const h=adviceHints(ms),sty=S.hc&&S.hc.style;if(Math.random()<.45+(S.hc?S.hc.skill:2)*.1)return h.best;if(sty==='atk')return 'atk';if(sty==='def')return 'def';return pick(TACS)[0];}
 function simMatchHC(A,B,kind){const ms=newMS(A,B,kind);ms.tac=hcPick(ms);while(ms.wa<2&&ms.wb<2){const r=nextPoint(ms);if(r.gameOver)ms.tac=hcPick(ms);else if(!ms.ivl&&(ms.a===8||ms.b===8)){ms.ivl=true;ms.tac=hcPick(ms);}}return {games:ms.games,win:ms.wa>ms.wb};}
-function hcIND(){const H=S.players.filter(p=>!unav(p)),bs=[...H].sort((a,b)=>srRaw(b)-srRaw(a)).slice(0,2).map(p=>p.id),rest=H.filter(p=>!bs.includes(p.id)).sort((a,b)=>drRaw(b)-drRaw(a));IND={date:S.today.date,s:bs,d:[[rest[0]?rest[0].id:'',rest[1]?rest[1].id:''],[rest[2]?rest[2].id:'',rest[3]?rest[3].id:'']]};}
+function hcIND(ev){const H=ev?indPool(ev):S.players.filter(p=>!unav(p)),bs=[...H].sort((a,b)=>srRaw(b)-srRaw(a)).slice(0,2).map(p=>p.id),rest=H.filter(p=>!bs.includes(p.id)).sort((a,b)=>drRaw(b)-drRaw(a));IND={date:S.today.date,s:bs,d:[[rest[0]?rest[0].id:'',rest[1]?rest[1].id:''],[rest[2]?rest[2].id:'',rest[3]?rest[3].id:'']]};}
 const hcSlots=ev=>aiOrder(S.players,FMT[fkOf(ev)]).map(x=>x.map(p=>p?p.id:''));
 function hcSilent(ev){
-  if(ev.type==='indiv'){hcIND();const en=IND.s.map(id=>({k:'S',ids:[id]}));IND.d.forEach(pr=>{if(pr[0]&&pr[1]&&pr[0]!==pr[1])en.push({k:'D',ids:pr});});const rs=runIndiv(ev,en),best=rs.map(r=>`${r.names} ${r.best}`).join('、');S.results.unshift({date:S.today.date,name:ev.name,txt:best,win:rs.some(r=>r.lg.length>=3)});log(`${ev.name}:${best}`);S.today.matchDone=true;IND=null;}
+  if(ev.type==='indiv'){hcIND(ev);const en=IND.s.map(id=>({k:'S',ids:[id]}));IND.d.forEach(pr=>{if(pr[0]&&pr[1]&&pr[0]!==pr[1])en.push({k:'D',ids:pr});});const rs=runIndiv(ev,en),best=rs.map(r=>`${r.names} ${r.best}`).join('、');S.results.unshift({date:S.today.date,name:ev.name,txt:best,win:rs.some(r=>r.lg.length>=3)});log(`${ev.name}:${best}`);S.today.matchDone=true;IND=null;}
   else applyTeamResult(runTeamMatch(fkOf(ev),hcSlots(ev),oppFor(ev),true),ev);
 }
 function showTeamResult(ev,res){
@@ -1739,6 +1734,224 @@ function autoBizMtg(silent){
   if(!silent){const w=S.mgr?spk('mgr'):spk('hc');openSheet(`<div class="sheet-head"><div><div class="sub">任せました</div><h2>経営会議の報告</h2></div></div>${talkHTML(w,`経営会議は${S.mgr&&S.hc?'監督と':''}私の方で進めておきました。決まったことをご報告します。`,'normal','')}<section class="card"><div class="list">${lg.map(t=>`<div class="kv"><span>${esc(t[0])}</span><b>${esc(t[1])}</b></div>`).join('')}</div></section><button class="btn primary big" data-a="closeSheet">閉じる</button>`);}
 }
 
+/* ========== v1.1: version, settings, overseas, live individual ========== */
+const VERSION='1.1.0';
+const CHANGELOG=[
+  {v:'1.1.0',d:'2026-10-12',items:['設定画面を追加(右上の歯車)。セーブ・読み込みもここから','チーム名・選手名・体育館名を変更できるように','海外大会に出場できるように(日本代表・ランキング上位の選手)。賞金はドルで支払われ、円に換算して収入に','全日本総合・ランキングサーキット・社会人・海外大会を観戦して、作戦を指示できるように','スタート画面と体育館の見た目を一新']},
+  {v:'1.0.0',d:'2026-10-12',items:['アプリ版を公開']},
+];
+const USDJPY=150;
+const INTL=[
+  {m:10,d:25,y:0,key:'s750',name:'デンマークオープン',cty:'デンマーク',tier:'Super 750',lv:[67,72,76,80,84],usd:[900,2400,5400,12000,27000,54000],cost:450000},
+  {m:11,d:15,y:0,key:'ic',name:'ベトナム インターナショナルチャレンジ',cty:'ベトナム',tier:'International Challenge',lv:[55,60,64,68,72],usd:[0,100,250,500,900,1500],cost:180000,open:true},
+  {m:12,d:20,y:0,key:'wtf',name:'ワールドツアーファイナルズ',cty:'中国',tier:'Finals',lv:[80,83,86],usd:[9500,20000,45000,95000],cost:300000,elite:true},
+  {m:1,d:11,y:1,key:'s1000',name:'マレーシアオープン',cty:'マレーシア',tier:'Super 1000',lv:[70,75,79,83,87],usd:[1500,4000,9000,20000,45000,90000],cost:220000},
+  {m:3,d:15,y:1,key:'s1000',name:'全英オープン',cty:'イギリス',tier:'Super 1000',lv:[70,75,79,83,87],usd:[1500,4000,9000,20000,45000,90000],cost:450000},
+  {m:3,d:29,y:1,key:'ic',name:'ポーランド インターナショナル',cty:'ポーランド',tier:'International Challenge',lv:[55,60,64,68,72],usd:[0,100,250,500,900,1500],cost:400000,open:true},
+  {m:6,d:14,y:1,key:'s1000',name:'インドネシアオープン',cty:'インドネシア',tier:'Super 1000',lv:[70,75,79,83,87],usd:[1500,4000,9000,20000,45000,90000],cost:220000},
+  {m:7,d:19,y:1,key:'s750',name:'ジャパンオープン',cty:'日本(東京)',tier:'Super 750',lv:[67,72,76,80,84],usd:[900,2400,5400,12000,27000,54000],cost:60000},
+  {m:8,d:30,y:1,key:'wc',name:'世界選手権',cty:'開催国',tier:'World Championships',lv:[68,73,78,82,86],usd:[0,0,0,0,0,0],cost:400000,bonus:[0,0,300000,800000,1500000,3000000]},
+];
+Object.assign(PTS,{s1000:[10,25,45,70,100,140],s750:[8,18,32,50,72,100],ic:[3,8,14,22,32,45],wc:[12,28,50,80,115,160],wtf:[40,70,110,160]});
+const FN={
+  '中国':[['ワン','リー','チャン','チェン','リウ','ヤン','ジャオ','ホアン'],['ウェイ','ハオ','ユーチー','ジエ','シャオ','イーファン','ティン','ルイ']],
+  'インドネシア':[['サントソ','グナワン','スギアルト','ハルトノ','ウィジャヤ','プトラ'],['リオ','アンソニー','ジョナタン','グレゴリア','アプリヤニ','ケビン']],
+  'デンマーク':[['アクセルセン','アントンセン','イェンセン','ハンセン','ニールセン','ラスムセン'],['ヴィクター','アンデルス','ラスムス','ミア','ラインホルト','フレデリク']],
+  'マレーシア':[['リー','チア','ゴー','タン','ン','オン'],['ジージア','アーロン','スーイーク','ペーリン','ウェイチョン','イーシン']],
+  '韓国':[['キム','イ','パク','チェ','チョン','カン'],['ジュンヒョク','セヨン','ソヨン','ミンス','ヒョンウ','ジウ']],
+  'インド':[['セン','シャルマ','クマール','レッディ','シン','パテル'],['ラクシャ','サトウィク','シンドゥ','キダンビ','プラナイ','アシュウィニ']],
+  'タイ':[['ウォンワン','チャイワン','ブーンサク','インタノン','スパニダ'],['クンラウット','ラチャノック','ポーンパウィー','サラン','ニティ']],
+  '台湾':[['チョウ','ワン','リン','ダイ','ツー'],['ティエンチェン','ツーウェイ','ズーイン','チュンウェイ','ポーハン']],
+};
+const NATS=Object.keys(FN);
+function foreignOpp(lv){const c=pick(NATS),o=genOpp(lv);o.name=pick(FN[c][1])+'・'+pick(FN[c][0]);o.cty=c;o.lk=genLook(S.team.g,25);o.lk.skin=c==='デンマーク'?0:c==='インド'?3:RI(0,2);if(c==='デンマーク'&&Math.random()<.5)o.lk.hc=4;return o;}
+function intlEvents(Y){return INTL.map(t=>({date:`${Y+t.y}-${String(t.m).padStart(2,'0')}-${String(t.d).padStart(2,'0')}`,type:'indiv',intl:true,...t,name:t.name}));}
+const worldRank=p=>clamp(Math.round(900*Math.exp(-(p.wp||0)/140)),1,999);
+function eligible(ev,p){if(!ev.intl)return true;if(ev.elite)return p.nat==='A'&&worldRank(p)<=24;if(ev.open)return !!p.nat||rankOf(p)<=60;return !!p.nat||rankOf(p)<=20;}
+function indPool(ev){return S.players.filter(p=>!p.inj&&(!p.away||(ev.intl&&p.awayWhy==='代表合宿'))&&eligible(ev,p));}
+function rnd(ev,r){const n=ev.lv.length,k=n-r;return k===1?'決勝':k===2?'準決勝':k===3?'準々決勝':`${r+1}回戦`;}
+function bestOf(ev,r){const n=ev.lv.length;return r>=n?'優勝':r===n-1?'準優勝':r===n-2?'ベスト4':r===n-3?'ベスト8':rnd(ev,r)+'敗退';}
+function indOpp(ev,r,k){const lv=ev.lv[r]+R(-3,3),mk=()=>ev.intl&&ev.cty!=='日本(東京)'||ev.intl&&Math.random()<.7?foreignOpp(lv):genOpp(lv);return k==='S'?[mk()]:[mk(),mk()];}
+function finishEntry(ev,en,r,lg){
+  const A=en.ids.map(P).filter(Boolean),best=bestOf(ev,r),arr=PTS[ev.key]||PTS.shakai,pt=arr[Math.min(r,arr.length-1)];
+  A.forEach(p=>{p.rp=(p.rp||0)+pt;if(ev.intl){p.wp=(p.wp||0)+pt*1.5;p.fans=(p.fans||0)+r*120+(best==='優勝'?3000:0);p.fat+=12;p.cond=clamp(p.cond-4,20,100);if(ev.cty!=='日本(東京)')p.away=Math.max(p.away||0,2),p.awayWhy='海外遠征';}});
+  S.fame+=r*(ev.intl?2:1.2)+(best==='優勝'?(ev.intl?14:6):0);
+  let prize=0;
+  if(ev.intl){const usd=(ev.usd||[])[Math.min(r,(ev.usd||[0]).length-1)]||0;if(usd)prize=payPrize(usd*USDJPY,A,r>=2?`${ev.name}(${A.map(p=>p.name).join('/')}・${best}・$${usd.toLocaleString()})`:'','intlPrize');
+    const b=ev.bonus?ev.bonus[Math.min(r,ev.bonus.length-1)]:0;if(b){earn('bonus',b);log(`${ev.name}の${best}で親会社から報奨金 ${man(b)}`);}}
+  else prize=payPrize((PRZ[ev.key]||PRZ.shakai)[Math.min(r,6)],A,r>=3?`${ev.name}(${A.map(p=>p.name).join('/')}・${best})`:'');
+  return {k:en.k,names:A.map(p=>p.name).join(' / '),lg,best,prize,usd:ev.intl?((ev.usd||[])[Math.min(r,(ev.usd||[0]).length-1)]||0):0};
+}
+function runIndiv(ev,entries,noCost){
+  if(ev.intl&&!noCost)spend('other',ev.cost*sum(entries.map(e=>e.ids.length)));
+  return entries.map(en=>{
+    const A=en.ids.map(P),lg=[];let r=0;
+    for(;r<ev.lv.length;r++){const B=indOpp(ev,r,en.k),m=simMatch(A,B,en.k);lg.push({rd:rnd(ev,r),opp:B.map(x=>x.name+(x.cty?`(${x.cty})`:'')).join('/'),sc:m.games.map(g=>`${g.a}-${g.b}`).join(' '),win:m.win});A.forEach(p=>{p.fat+=7;m.win?p.w++:p.l++;if(m.win)p.fans=(p.fans||0)+60;});if(!m.win)break;}
+    return finishEntry(ev,en,r,lg);
+  });
+}
+function indEntries(ev){const pool=indPool(ev),ok=id=>pool.some(p=>p.id===id);const en=IND.s.filter(ok).map(id=>({k:'S',ids:[id]}));IND.d.forEach(pr=>{if(pr[0]&&pr[1]&&pr[0]!==pr[1]&&ok(pr[0])&&ok(pr[1]))en.push({k:'D',ids:pr});});return en;}
+function recordIndiv(ev,rs){S.today.matchDone=true;const best=rs.map(r=>`${r.names} ${r.best}`).join('、');S.results.unshift({date:S.today.date,name:ev.name,txt:best,win:rs.some(r=>r.lg.filter(g=>g.win).length>=(ev.intl?2:3))});log(`${ev.name}:${best}`);IND=null;save();}
+function indResultHTML(ev,rs){return rs.map(r=>`<section class="card"><div class="row"><b class="grow">${r.k==='S'?'シングルス':'ダブルス'}・${esc(r.names)}</b><span class="pill ${r.best.includes('優勝')?'good':'warn'}">${r.best}${r.prize?` 賞金${man(r.prize)}`:''}${r.usd?`($${r.usd.toLocaleString()})`:''}</span></div><div class="list" style="margin-top:6px">${r.lg.map(g=>`<div class="kv"><span>${g.rd} vs ${esc(g.opp)}</span><b style="color:var(--${g.win?'good':'bad'})">${g.sc}</b></div>`).join('')}</div></section>`).join('');}
+async function liveIndiv(ev,entries){
+  if(ev.intl)spend('other',ev.cost*sum(entries.map(e=>e.ids.length)));
+  S.today.liveStarted=true;save();
+  LIVE={skip:false,spd:1,adv:null,one:false};
+  const lab=en=>`${en.k==='S'?'S':'D'}・${en.ids.map(id=>P(id).name.split(' ')[0]).join('/')}`;
+  openSheet(`<div class="sub" style="text-align:center">${ev.intl?`${ev.tier}・${ev.cty}`:'個人戦'}</div><h2 style="text-align:center">${ev.name}</h2>
+  <div class="lv-cur" id="lvCur"></div>
+  <div><canvas id="lvCv" aria-label="試合の様子"></canvas></div>
+  <div id="lvAdv" hidden></div>
+  <ol class="lvl" id="lvList">${entries.map((en,i)=>`<li id="lvr${i}"><span>${esc(lab(en))}</span><span class="sub">待機中</span><span class="s"></span></li>`).join('')}</ol>
+  <div class="row" id="lvCtl"><button class="btn sm on" data-a="lvSpd" data-v="1">×1</button><button class="btn sm" data-a="lvSpd" data-v="2">×2</button><button class="btn sm" data-a="lvSpd" data-v="4">×4</button><span class="grow"></span><button class="btn sm" data-a="lvOne">この試合を飛ばす</button><button class="btn sm" data-a="lvSkip">結果まで</button></div>
+  <div id="lvEnd" hidden></div>`);
+  lvSetup();
+  const rs=[];
+  for(let i=0;i<entries.length;i++){
+    const en=entries[i],A=en.ids.map(P),row=$('#lvr'+i),lg=[];let r=0;
+    for(;r<ev.lv.length;r++){
+      const B=indOpp(ev,r,en.k),an=A.map(p=>p.name).join(' / '),bn=B.map(p=>p.name+(p.cty?`(${p.cty})`:'')).join(' / '),ms=newMS(A,B,en.k);
+      row.querySelector('.sub').textContent=`${rnd(ev,r)} vs ${bn}`;
+      if(!LIVE.skip){lvSet(A,B,en.k);}
+      const cur=()=>{if(!LIVE||LIVE.skip)return;const gp=ms.games.map(g=>`${g.a}-${g.b}`).join('  ');
+        $('#lvCur').innerHTML=`<div class="lbl">${rnd(ev,r)}・${en.k==='S'?'シングルス':'ダブルス'}${ms.tac?`<span class="tac">作戦:${TACN[ms.tac]}</span>`:''}</div>
+        <div class="lv-names"><div>${A.map(p=>`<span class="av">${faceSVG(p.lk,moodOf(p),28)}</span>`).join('')}<br>${esc(an)}</div><div class="gscore">${ms.a}-${ms.b}</div><div>${B.map(p=>`<span class="av">${faceSVG(lookOf(p),'normal',28)}</span>`).join('')}<br>${esc(bn)}</div></div>
+        <div class="gprev">第${ms.gi+1}ゲーム${gp?'  ('+gp+')':''}</div>`;};
+      cur();if(!LIVE.skip){lvDraw();await sleep(500);}
+      while(ms.wa<2&&ms.wb<2){const p=nextPoint(ms);if(!LIVE.skip){await animPoint(p);cur();}if(ms.wa>=2||ms.wb>=2)break;
+        if(p.gameOver){if(!LIVE.skip)await advise(ms,'ゲーム間');}else if(!ms.ivl&&(ms.a===8||ms.b===8)){ms.ivl=true;if(!LIVE.skip)await advise(ms,'インターバル');}}
+      const win=ms.wa>ms.wb;
+      lg.push({rd:rnd(ev,r),opp:bn,sc:ms.games.map(g=>`${g.a}-${g.b}`).join(' '),win});
+      A.forEach(p=>{p.fat+=7;win?p.w++:p.l++;if(win)p.fans=(p.fans||0)+60;});
+      if(LIVE.one){LIVE.one=false;LIVE.skip=false;}
+      if(!LIVE.skip){const now=performance.now();LV.pl[0][0].bub={t:say(A[0],win?'win':'lose'),until:now+1600};LV.pl[0].forEach(q=>q.cheer=win?now:0);await tween(1100/LIVE.spd,()=>lvDraw());LV.pl[0].forEach(q=>q.cheer=0);}
+      if(!win)break;
+    }
+    const res=finishEntry(ev,en,r,lg);rs.push(res);
+    row.className=res.best.includes('優勝')||lg.filter(g=>g.win).length>=2?'w':'l';row.querySelector('.sub').textContent=res.best;row.querySelector('.s').textContent=res.prize?man(res.prize):'';
+  }
+  recordIndiv(ev,rs);S.today.liveStarted=false;save();
+  $('#lvCtl').hidden=true;$('#lvAdv').hidden=true;
+  const top=rs.slice().sort((a,b)=>b.lg.filter(g=>g.win).length-a.lg.filter(g=>g.win).length)[0],tp=top?P(entries[rs.indexOf(top)].ids[0]):null,good=top&&top.lg.filter(g=>g.win).length>=2;
+  $('#lvCur').innerHTML=`<div class="res-big ${good?'win':'lose'}">${top?esc(top.best):''}</div><p class="note" style="text-align:center">賞金合計 ${man(sum(rs.map(r=>r.prize)))}</p>${tp?`<div class="talk" style="margin-top:8px"><span class="av">${faceSVG(tp.lk,good?'happy':'sad',56)}</span><div class="bubble grow">${esc(say(tp,good?'win':'lose'))}</div></div>`:''}`;
+  const e=$('#lvEnd');e.hidden=false;e.innerHTML=indResultHTML(ev,rs)+'<button class="btn primary big" data-a="lvClose">体育館に戻る</button>';
+  LIVE=null;
+}
+/* settings */
+function applyTheme(){try{const t=S&&S.settings&&S.settings.theme||'auto';if(t==='auto')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',t);}catch(e){}}
+function intlSec(){
+  const Y=seasonOf(S.today.date),t=S.today.date,list=intlEvents(Y).concat(intlEvents(Y+1)).filter(e=>e.date>=t).slice(0,6);
+  const nat=S.players.filter(p=>p.nat).sort((a,b)=>(b.wp||0)-(a.wp||0));
+  return `<section class="card"><h3>海外大会</h3><div class="list">${list.map(e=>{const el=S.players.filter(p=>eligible(e,p));return `<div class="kv"><span>${fmtShort(e.date)} ${esc(e.name)}<br><span class="sub">${e.tier}・${e.cty}・${e.usd.some(Boolean)?`優勝 $${e.usd[e.usd.length-1].toLocaleString()}`:'賞金なし'}</span></span><b class="${el.length?'':'sub'}" style="font-family:var(--fb);font-size:12px;text-align:right">${el.length?el.map(p=>esc(p.name.split(' ')[0])).join('・'):'出場資格なし'}</b></div>`;}).join('')}</div>
+  ${nat.length?`<h3 style="margin-top:12px">世界ランキング</h3>${nat.map(p=>`<div class="kv"><span>${esc(p.name)} <span class="pill good">${p.nat}代表</span></span><b>${worldRank(p)}位</b></div>`).join('')}`:''}
+  <p class="note" style="margin-top:6px">出場資格:Super 750以上は日本代表か国内20位以内、International Challengeは国内60位以内、ファイナルズは世界24位以内のA代表。賞金はドル建てで、1ドル${USDJPY}円で換算します。</p></section>`;
+}
+function settingsSheet(){
+  const st=S.settings||(S.settings={theme:'auto'});
+  openSheet(`<div class="sheet-head"><div><div class="sub">v${VERSION}</div><h2>設定</h2></div><button class="x" data-a="closeSheet" aria-label="閉じる">×</button></div>
+  <section class="card"><h3>セーブ</h3><p class="note">進行は毎日自動で保存されています。スロットに残したり、別の端末に引き継いだりはここから。</p>
+    <div class="grid2" style="margin-top:8px"><button class="btn primary" data-a="quickSave">スロット1に保存</button><button class="btn" data-a="saveMenu">読み込み・引き継ぎ</button></div></section>
+  <section class="card"><h3>名前の変更</h3>
+    <label class="kv" for="nmTeam" style="border:0"><span>チーム名</span></label><input type="text" id="nmTeam" maxlength="14" value="${esc(S.team.name)}" style="width:100%">
+    <label class="kv" for="nmGym" style="border:0;margin-top:8px"><span>体育館の名前 <span class="sub">${S.spons&&S.spons.name?'命名権の契約中は契約名が優先されます':''}</span></span></label><input type="text" id="nmGym" maxlength="16" value="${esc(S.gymName||'')}" placeholder="例:みなと市民バドミントンセンター" style="width:100%">
+    <h3 style="margin-top:14px">選手の名前</h3>
+    <div class="list">${S.players.map(p=>`<div class="row"><span class="av">${faceSVG(p.lk,moodOf(p),30)}</span><input type="text" id="nm-${p.id}" data-pid="${p.id}" class="nmP" maxlength="10" value="${esc(p.name)}" style="flex:1;min-width:0"></div>`).join('')}</div>
+    <p class="note" style="margin-top:6px">姓と名の間はスペースを入れると、会話や試合で下の名前で呼ばれます。</p>
+    <button class="btn primary" style="width:100%;margin-top:8px" data-a="saveNames">名前を保存</button></section>
+  <section class="card"><h3>表示</h3><div class="seg">${[['auto','端末に合わせる'],['light','ライト'],['dark','ダーク']].map(([k,l])=>`<button class="${st.theme===k?'on':''}" data-a="theme" data-v="${k}">${l}</button>`).join('')}</div></section>
+  <section class="card"><h3>アップデート情報</h3>${CHANGELOG.map(c=>`<p style="margin:6px 0 2px"><b>v${c.v}</b> <span class="sub">${c.d}</span></p><ul class="chg">${c.items.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`).join('')}</section>
+  <section class="card"><h3>最初からやり直す</h3><div class="row">${UI.rel==='reset'?'<span class="err grow">本当に最初からやり直しますか?</span><button class="btn sm" data-a="resetNo2">やめる</button><button class="btn sm warn" data-a="resetYes">リセット</button>':'<span class="grow note">今の進行は消えます(スロットの保存は残ります)</span><button class="btn sm" data-a="reset2">やり直す</button>'}</div></section>`,true);
+}
+function updateNotice(){
+  if(!S||S.seenVer===VERSION)return false;const first=!S.seenVer;S.seenVer=VERSION;save();if(first&&!S.ledger.length)return false;
+  const c=CHANGELOG[0];openSheet(`<div class="sheet-head"><div><div class="sub">アップデート</div><h2>v${c.v} に更新されました</h2></div><button class="x" data-a="closeSheet" aria-label="閉じる">×</button></div><section class="card"><ul class="chg">${c.items.map(t=>`<li>${esc(t)}</li>`).join('')}</ul></section><p class="note">セーブデータはそのまま引き継がれています。</p><button class="btn primary big" data-a="closeSheet">遊ぶ</button>`);return true;
+}
+/* title screen scene */
+let TS=null;
+function titleScene(){
+  const cv=$('#titleCv');if(!cv)return;const W=cv.parentElement.clientWidth||340,H=Math.round(W*.78),dpr=window.devicePixelRatio||1;
+  cv.width=W*dpr;cv.height=H*dpr;cv.style.height=H+'px';
+  const g=UI.g||'M',cast=[genLook(g,24),genLook(g,22),genLook(g,52),genLook('F',10),genLook('M',9),genLook(g,27)];cast[2].gl=true;
+  TS={cv,W,H,dpr,cast,t0:performance.now()};
+  const loop=()=>{if(!TS||!TS.cv.isConnected){TS=null;return;}drawTitle();requestAnimationFrame(loop);};requestAnimationFrame(loop);
+}
+function drawTitle(){
+  const {cv,W,H,dpr,cast}=TS,x=cv.getContext('2d'),t=(performance.now()-TS.t0)/1000;x.setTransform(dpr,0,0,dpr,0,0);
+  const wallH=H*.42;let gr=x.createLinearGradient(0,0,0,wallH);gr.addColorStop(0,'#fde9c9');gr.addColorStop(1,'#f6d7a7');x.fillStyle=gr;x.fillRect(0,0,W,wallH);
+  for(let i=0;i<4;i++){const wx=W*(.06+i*.24),wy=H*.06,ww=W*.16,wh=H*.17;const sk=x.createLinearGradient(0,wy,0,wy+wh);sk.addColorStop(0,'#8fd3ff');sk.addColorStop(1,'#d8f1ff');x.fillStyle='#fff';rrect(x,wx-3,wy-3,ww+6,wh+6,6);x.fill();x.fillStyle=sk;rrect(x,wx,wy,ww,wh,4);x.fill();
+    x.fillStyle='rgba(255,255,255,.9)';const cx=wx+((t*8+i*40)%(ww+30))-15;x.beginPath();x.arc(cx,wy+wh*.4,5,0,7);x.arc(cx+6,wy+wh*.35,6,0,7);x.arc(cx+12,wy+wh*.42,4.5,0,7);x.fill();x.strokeStyle='#fff';x.lineWidth=2;x.beginPath();x.moveTo(wx+ww/2,wy);x.lineTo(wx+ww/2,wy+wh);x.stroke();}
+  const cols=['#ff7a59','#ffd23f','#3bceac','#5b8def','#ee6fa3'];x.strokeStyle='#b08a5a';x.lineWidth=1;x.beginPath();x.moveTo(0,H*.29);x.quadraticCurveTo(W/2,H*.36,W,H*.29);x.stroke();
+  for(let i=0;i<14;i++){const u=i/13,px=u*W,py=H*.29+Math.sin(u*Math.PI)*H*.07*.5+Math.sin(t*2+i)*1.2;x.fillStyle=cols[i%5];x.beginPath();x.moveTo(px-8,py);x.lineTo(px+8,py);x.lineTo(px,py+13);x.closePath();x.fill();}
+  gr=x.createLinearGradient(0,wallH,0,H);gr.addColorStop(0,'#e8b77c');gr.addColorStop(1,'#d39a5c');x.fillStyle=gr;x.fillRect(0,wallH,W,H-wallH);
+  x.strokeStyle='rgba(150,95,45,.25)';x.lineWidth=1;for(let i=0;i<14;i++){const y=wallH+(H-wallH)*i/14;x.beginPath();x.moveTo(0,y);x.lineTo(W,y);x.stroke();}
+  x.fillStyle='#4fae7d';x.beginPath();x.moveTo(W*.18,H*.5);x.lineTo(W*.82,H*.5);x.lineTo(W*.95,H*.98);x.lineTo(W*.05,H*.98);x.closePath();x.fill();
+  x.strokeStyle='#fff';x.lineWidth=2;x.beginPath();x.moveTo(W*.2,H*.52);x.lineTo(W*.8,H*.52);x.lineTo(W*.92,H*.96);x.lineTo(W*.08,H*.96);x.closePath();x.stroke();
+  const ny=H*.7;x.strokeStyle='#666';x.lineWidth=3;x.beginPath();x.moveTo(W*.12,ny);x.lineTo(W*.12,ny-H*.13);x.moveTo(W*.88,ny);x.lineTo(W*.88,ny-H*.13);x.stroke();
+  x.fillStyle='rgba(40,40,40,.25)';x.fillRect(W*.12,ny-H*.13,W*.76,H*.07);x.strokeStyle='#fff';x.lineWidth=2.5;x.beginPath();x.moveTo(W*.12,ny-H*.13);x.lineTo(W*.88,ny-H*.13);x.stroke();
+  const s=W*.035,per=1.6,ph=(t%per)/per,leg=Math.floor(t/per)%2,fx=leg?W*.68:W*.32,fy=leg?H*.6:H*.9,tx=leg?W*.32:W*.68,ty=leg?H*.9:H*.6;
+  const near={x:W*.32,y:H*.9},far={x:W*.68,y:H*.6};
+  drawChibi(x,far.x,far.y,s*.85,cast[1],{swing:leg&&ph<.25?ph*4:0,jump:leg&&ph<.2?Math.sin(ph*5*Math.PI)*.5:0,shirt:'#ff7a59',mood:'happy'});
+  const sx=fx+(tx-fx)*ph,sy=fy+(ty-fy)*ph-Math.sin(ph*Math.PI)*H*.32;x.fillStyle='rgba(0,0,0,.2)';x.beginPath();x.ellipse(fx+(tx-fx)*ph,fy+(ty-fy)*ph,3,1.3,0,0,7);x.fill();
+  x.fillStyle='#fff';x.beginPath();x.arc(sx,sy,4,0,7);x.fill();x.fillStyle='#e8c38f';x.beginPath();x.arc(sx+(leg?-2:2),sy+2.5,2.2,0,7);x.fill();
+  drawChibi(x,near.x,near.y,s,cast[0],{back:true,swing:!leg&&ph<.25?ph*4:0,shirt:'#5b8def'});
+  drawChibi(x,W*.9,H*.97,s*.9,cast[2],{noRacket:true,shirt:'#2b2f3a',mood:'normal'});x.fillStyle='#f5f0e6';x.fillRect(W*.9+s*.6,H*.97-s*2.6,s*.9,s*1.2);
+  [[W*.06,cast[3]],[W*.15,cast[4]]].forEach(([px,lk],i)=>drawChibi(x,px,H*.62-Math.abs(Math.sin(t*4+i))*s*.5,s*.6,lk,{noRacket:true,cheer:true,mood:'happy',shirt:i?'#ffd23f':'#ee6fa3'}));
+  if(Math.floor(t*1.2)%4<2)drawBubble(x,W*.1,H*.62-s*4,'がんばれー!',10,W);
+  if(ph>.85&&ph<1)drawBubble(x,(leg?near.x:far.x),(leg?near.y:far.y)-s*5,pick(['ナイス!','よっしゃ!']),10,W);
+}
+/* cute gym */
+function gvLayout(){
+  const cv=$('#gym');if(!cv)return;
+  const C=S.gym.courts,W=cv.parentElement.clientWidth||340,cols=C<=4?C:Math.ceil(C/2),rows=Math.ceil(C/cols),band=30;
+  const pad=12,gap=12,cw=Math.min(118,(W-pad*2-gap*(cols-1))/cols),ch=cw*2.2,gw=cols*cw+(cols-1)*gap,ox=(W-gw)/2,lobby=84;
+  const H=Math.round(band+pad+rows*ch+(rows-1)*gap+16+lobby),dpr=window.devicePixelRatio||1;
+  cv.width=W*dpr;cv.height=H*dpr;cv.style.height=H+'px';
+  const courts=[];for(let i=0;i<C;i++){const c=i%cols,r=Math.floor(i/cols);courts.push({x:ox+c*(cw+gap),y:band+pad+r*(ch+gap),w:cw,h:ch});}
+  GV.L={W,H,dpr,band,courts,lobbyY:H-lobby,door:{x:30,y:H-16},desk:{x:W/2,y:H-lobby+46},r:clamp(cw*.07,3.2,6)};
+}
+function gvDraw(msg){
+  const cv=$('#gym');if(!cv||!GV.L)return;
+  const x=cv.getContext('2d'),L=GV.L,t=GV.tk,now=performance.now()/1000,dark=document.documentElement.getAttribute('data-theme')==='dark'||(document.documentElement.getAttribute('data-theme')!=='light'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);
+  x.setTransform(L.dpr,0,0,L.dpr,0,0);
+  let gr=x.createLinearGradient(0,0,0,L.band);gr.addColorStop(0,dark?'#3a3226':'#fde4bd');gr.addColorStop(1,dark?'#2f281e':'#f4cf98');x.fillStyle=gr;x.fillRect(0,0,L.W,L.band);
+  const nw=Math.max(3,Math.floor(L.W/70));for(let i=0;i<nw;i++){const wx=(i+.5)*L.W/nw-16,wy=5;x.fillStyle=dark?'#1d2a3a':'#fff';rrect(x,wx-2,wy-2,36,L.band-8,4);x.fill();const sk=x.createLinearGradient(0,wy,0,wy+L.band-12);sk.addColorStop(0,dark?'#22355a':'#8fd3ff');sk.addColorStop(1,dark?'#304a70':'#d8f1ff');x.fillStyle=sk;rrect(x,wx,wy,32,L.band-12,3);x.fill();if(dark){x.fillStyle='#f6e7a1';x.beginPath();x.arc(wx+24,wy+6,2,0,7);x.fill();}}
+  const fc=['#ff7a59','#ffd23f','#3bceac','#5b8def','#ee6fa3'];x.strokeStyle='rgba(120,80,40,.5)';x.lineWidth=1;x.beginPath();x.moveTo(0,L.band-6);x.quadraticCurveTo(L.W/2,L.band+2,L.W,L.band-6);x.stroke();
+  const nf=Math.floor(L.W/22);for(let i=0;i<=nf;i++){const u=i/nf,px=u*L.W,py=L.band-6+Math.sin(u*Math.PI)*4+Math.sin(now*2+i)*.8;x.fillStyle=fc[i%5];x.beginPath();x.moveTo(px-6,py);x.lineTo(px+6,py);x.lineTo(px,py+9);x.closePath();x.fill();}
+  gr=x.createLinearGradient(0,L.band,0,L.lobbyY);gr.addColorStop(0,t.floor);gr.addColorStop(1,t.floor2);x.fillStyle=gr;x.fillRect(0,L.band,L.W,L.lobbyY-L.band);
+  x.strokeStyle='rgba(120,75,35,.18)';x.lineWidth=1;for(let y=L.band+8,k=0;y<L.lobbyY;y+=10,k++){x.beginPath();x.moveTo(0,y+.5);x.lineTo(L.W,y+.5);x.stroke();for(let px=(k%2)*40;px<L.W;px+=80){x.beginPath();x.moveTo(px+.5,y-10);x.lineTo(px+.5,y);x.stroke();}}
+  const hi=Math.floor(GV.min/60)-9;
+  L.courts.forEach((ct,i)=>{
+    x.fillStyle='rgba(0,0,0,.12)';rrect(x,ct.x+2,ct.y+3,ct.w,ct.h,8);x.fill();
+    x.fillStyle=t.mat;rrect(x,ct.x,ct.y,ct.w,ct.h,8);x.fill();
+    const ix=ct.x+ct.w*.08,iy=ct.y+ct.h*.04,iw=ct.w*.84,ih=ct.h*.92,ln=(a,b,c,d)=>{x.beginPath();x.moveTo(a,b);x.lineTo(c,d);x.stroke();};
+    x.strokeStyle=t.cline;x.lineWidth=1;x.strokeRect(ix,iy,iw,ih);
+    const ss=iw*(.46/6.1),sv=ih*(1.98/13.4),lv=ih*(.76/13.4),my=iy+ih/2;
+    ln(ix+ss,iy,ix+ss,iy+ih);ln(ix+iw-ss,iy,ix+iw-ss,iy+ih);ln(ix,my-sv,ix+iw,my-sv);ln(ix,my+sv,ix+iw,my+sv);ln(ix,iy+lv,ix+iw,iy+lv);ln(ix,iy+ih-lv,ix+iw,iy+ih-lv);ln(ix+iw/2,iy,ix+iw/2,my-sv);ln(ix+iw/2,my+sv,ix+iw/2,iy+ih);
+    x.strokeStyle='rgba(255,255,255,.95)';x.lineWidth=2.5;ln(ct.x-2,my,ct.x+ct.w+2,my);x.fillStyle='#ff7a59';x.beginPath();x.arc(ct.x-2,my,3,0,7);x.arc(ct.x+ct.w+2,my,3,0,7);x.fill();
+    x.fillStyle='rgba(255,255,255,.9)';rrect(x,ct.x+3,ct.y+3,14,12,4);x.fill();x.fillStyle=t.mat;x.font='700 9px "JetBrains Mono",monospace';x.textAlign='center';x.fillText(String(i+1),ct.x+10,ct.y+12);
+    const cell=GV.run&&hi>=0&&hi<13&&S.today.grid[i]?S.today.grid[i][hi]:null;
+    if(cell){const lb={team:'練習',school:'スクール',walk:'開放',match:'試合',host:'大会',bk:cell.reg?'定期':'予約'}[cell.t],col={team:t.team,school:t.school,walk:t.walk,match:t.accent,host:t.accent,bk:cell.reg?t.reg:t.bk}[cell.t];x.font='700 9px "Zen Kaku Gothic New",sans-serif';const w=x.measureText(lb).width+8;x.fillStyle=col;rrect(x,ct.x+ct.w-w-3,ct.y+3,w,12,6);x.fill();x.fillStyle='#fff';x.textAlign='center';x.fillText(lb,ct.x+ct.w-w/2-3,ct.y+12);}
+  });
+  gr=x.createLinearGradient(0,L.lobbyY,0,L.H);gr.addColorStop(0,t.panel2);gr.addColorStop(1,t.panel);x.fillStyle=gr;x.fillRect(0,L.lobbyY,L.W,L.H-L.lobbyY);
+  x.fillStyle=t.line;x.fillRect(0,L.lobbyY,L.W,3);
+  x.fillStyle='#c0504d';rrect(x,8,L.H-26,48,18,4);x.fill();x.fillStyle='#fff';x.font='700 9px "Zen Kaku Gothic New",sans-serif';x.textAlign='center';x.fillText('入口',32,L.H-14);
+  const vx=L.W-34,vy=L.lobbyY+10;x.fillStyle='#e94e4e';rrect(x,vx,vy,24,38,4);x.fill();x.fillStyle='#fff';x.fillRect(vx+4,vy+5,16,12);['#5b8def','#3bceac','#ffd23f','#ff7a59'].forEach((c,i)=>{x.fillStyle=c;x.fillRect(vx+5+(i%2)*8,vy+6+Math.floor(i/2)*6,6,4);});x.fillStyle='#222';x.fillRect(vx+6,vy+28,12,5);
+  const plant=(px,py)=>{x.fillStyle='#b5651d';rrect(x,px-7,py-9,14,11,3);x.fill();x.fillStyle='#3e9b5b';x.beginPath();x.arc(px,py-15,7,0,7);x.arc(px-5,py-12,5,0,7);x.arc(px+5,py-12,5,0,7);x.fill();};plant(L.W-48,L.lobbyY+48);plant(70,L.lobbyY+30);
+  x.fillStyle='#8a6a48';rrect(x,L.W-120,L.lobbyY+56,56,7,3);x.fill();x.fillRect(L.W-116,L.lobbyY+63,3,6);x.fillRect(L.W-71,L.lobbyY+63,3,6);
+  const nb=L.W*.22;x.fillStyle='#d9b88a';rrect(x,nb-22,L.lobbyY+8,44,26,3);x.fill();[['#fff',0],['#ffe08a',1],['#bfe3ff',2]].forEach(([c,i])=>{x.fillStyle=c;x.fillRect(nb-18+i*13,L.lobbyY+12+(i%2)*3,11,14);});
+  const s0=L.r*.85,staff=[{lk:S.clerk.lk,shirt:'#4a7a5a'}].concat(S.staff.slice(0,2).map(s=>({lk:lookOf(s),shirt:'#4a7a5a'})));
+  if(GV.run&&!isOffDay(S.today.date)&&GV.min<17*60){const dp=S.players.find(p=>p.ct==='emp'&&p.work==='desk'&&!p.inj);if(dp)staff.push({lk:dp.lk,shirt:t.team});}
+  staff.forEach((s,i)=>drawChibi(x,L.desk.x-(staff.length-1)*s0*1.6+i*s0*3.2,L.desk.y-6,s0,s.lk,{noRacket:true,shirt:s.shirt,mood:'happy'}));
+  const dw=Math.max(88,staff.length*s0*4);x.fillStyle='#c98b4f';rrect(x,L.desk.x-dw/2,L.desk.y-10,dw,13,4);x.fill();x.fillStyle='#e0a96d';x.fillRect(L.desk.x-dw/2,L.desk.y-10,dw,4);
+  x.fillStyle=t.muted;x.font='500 10px "Zen Kaku Gothic New",sans-serif';x.textAlign='center';x.fillText('受付',L.desk.x,L.desk.y+16);
+  x.textAlign='right';x.fillText(GV.run?`在館 ${GV.people.filter(p=>p.st!=='out').length}人`:'',L.W-44,L.H-10);
+  [...GV.people].filter(p=>p.wait<=0).sort((a,b)=>a.y-b.y).forEach(p=>{const s=s0*(p.small?.75:1),back=p.st==='play'?p.half===1:(p.ty<p.y-.5);drawChibi(x,p.x,p.y,s,p.lk,{back,run:p.st==='play'?0:p.run,swing:p.sw>0?1-p.sw/.25:0,shirt:p.shirt,noRacket:p.st==='out',mood:p.bub?'happy':'normal'});});
+  GV.shut.forEach(s=>{const u=s.u,px=s.from.x+(s.to.x-s.from.x)*u,py=s.from.y+(s.to.y-s.from.y)*u,z=Math.sin(Math.PI*u)*16+s0*3.6;x.fillStyle='rgba(0,0,0,.22)';x.beginPath();x.arc(px,py,1.6,0,7);x.fill();x.fillStyle='#fff';x.beginPath();x.arc(px,py-z,2.4,0,7);x.fill();x.fillStyle='#e8c38f';x.beginPath();x.arc(px,py-z+1.6,1.3,0,7);x.fill();});
+  GV.people.forEach(p=>{if(p.bub&&p.wait<=0)drawBubble(x,p.x,p.y-s0*5.2,p.bub.t,9,L.W);});
+  if(GV.clerkBub&&GV.rt<GV.clerkBub.until)drawBubble(x,L.desk.x,L.desk.y-s0*5.6,GV.clerkBub.t,9,L.W);
+  if(msg){const bw=Math.min(L.W-40,240),my=(L.band+L.lobbyY)/2;x.fillStyle='rgba(255,255,255,.92)';rrect(x,(L.W-bw)/2,my-22,bw,44,22);x.fill();x.strokeStyle=t.mat;x.lineWidth=2;x.stroke();x.fillStyle=t.mat;x.font='400 15px "Dela Gothic One",sans-serif';x.textAlign='center';x.fillText(msg,L.W/2,my+5);}
+}
+
 /* ========== save ========== */
 function save(){if(!S)return;const t=JSON.stringify(S);try{localStorage.setItem(SAVE,t);}catch(e){}try{window.__nativeSave&&window.__nativeSave(SAVE,t);}catch(e){}}
 /* ========== save data: slots / export / import ========== */
@@ -1774,8 +1987,8 @@ function load(){try{const s=localStorage.getItem(SAVE);if(s)S=JSON.parse(s);}cat
 /* ========== render ========== */
 function render(){
   if(!S)return;
-  $('#hdr').innerHTML=`<div><div class="brand">バドミントン実業団物語${S.chair?' <span class="pill warn">会長</span>':''}</div><div class="hd-team">${esc(S.team.name)}・${divName(S.league.div)}・${S.gym.courts}面${S.spons&&S.spons.name?'・'+esc(S.spons.name.co)+'アリーナ':''}</div></div>
-  <div class="hd-r"><div class="hd-date">${fmtLong(S.today.date)}${holiday(S.today.date)?`<span class="hol">${holiday(S.today.date)}</span>`:''}<span class="wx">${WXN[wxOf(S.today.date)]}</span></div><div class="hd-money ${S.money<0?'neg':''}">${yen(S.money)}</div></div>`;
+  $('#hdr').innerHTML=`<div><div class="brand">バドミントン実業団物語${S.chair?' <span class="pill warn">会長</span>':''}</div><div class="hd-team">${esc(S.team.name)}・${divName(S.league.div)}・${S.gym.courts}面${S.spons&&S.spons.name?'・'+esc(S.spons.name.co)+'アリーナ':S.gymName?'・'+esc(S.gymName):''}</div></div>
+  <div class="hd-r"><div class="hd-date">${fmtLong(S.today.date)}${holiday(S.today.date)?`<span class="hol">${holiday(S.today.date)}</span>`:''}<span class="wx">${WXN[wxOf(S.today.date)]}</span></div><div class="hd-money ${S.money<0?'neg':''}">${yen(S.money)}</div></div><button class="gear" data-a="settings" aria-label="設定"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.5 7.5 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.6 7.6 0 0 0-1.7-1L15 3.3h-4l-.4 2.6a7.6 7.6 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.5 7.5 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1c.5.4 1.1.7 1.7 1l.4 2.6h4l.4-2.6c.6-.3 1.2-.6 1.7-1l2.5 1 2-3.5zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg></button>`;
   document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===UI.tab));
   $('#tabs').classList.toggle('lock',UI.running);
   if(S.over){$('#view').innerHTML=overHTML();return;}
@@ -1815,7 +2028,7 @@ function vGym(){
 }
 function evCard(ev,T){
   let body='';
-  if(ev.type==='indiv')body=`<p class="note">個人戦。シングルス最大3名・ダブルス最大2組をエントリーできます。</p>`;
+  if(ev.type==='indiv')body=ev.intl?`<p class="note">${ev.tier}・${ev.cty}開催の国際大会。出場できる選手:${indPool(ev).map(p=>esc(p.name)).join('、')}。遠征費 1人${man(ev.cost)}。賞金はドル建てで、1ドル${USDJPY}円で換算します。</p>`:`<p class="note">個人戦。シングルス最大3名・ダブルス最大2組をエントリーできます。観戦しながら作戦を指示することもできます。</p>`;
   else{const o=oppFor(ev);body=`<div class="vs"><span>${esc(S.team.name)}</span><span class="sub">vs</span><span>${esc(o.name)}</span><span class="pill warn">戦力 ${Math.round(o.lv)}</span></div><p class="note">${ev.type==='pm'?'練習試合・2複1単(順位や戦績には影響しません)':ev.type==='league'?(ev.home?(S.gym.fac.seats?'ホーム戦(自前の体育館で開催)':'ホーム戦(市の体育館を借りて開催)'):'アウェー戦')+'・2複1単、3試合すべて実施':'5試合(2複3単)・先に3勝で決着'}</p>`;}
   return `<section class="card evcard"><div class="sub">本日の試合${T.matchDone?'・終了':''}</div><div class="ev-name">${ev.name}</div>${body}</section>`;
 }
@@ -1906,6 +2119,7 @@ function vCup(){
     </tbody></table></div>
     <p class="note" style="margin-top:8px">${L.div===2?'上位2チームが翌シーズン S/Jリーグ(1部)に昇格。':'下位2チームは S/JリーグIIに降格。'}${L.done?` 今季は${L.rank}位で終了。`:''}</p></section>
   ${cupReal()}
+  ${intlSec()}
   ${prizeSec()}
   <section class="card"><h3>戦績</h3><div class="list">${S.results.slice(0,20).map(r=>`<div class="kv"><span>${fmtShort(r.date)} ${esc(r.name)}<br><span class="sub">${esc(r.txt)}</span></span><b style="color:var(--${r.win?'good':'bad'})">${r.win?'○':'●'}</b></div>`).join('')||'<p class="note">まだ公式戦の記録はありません</p>'}</div></section>`;
 }
@@ -2057,7 +2271,7 @@ function checkOrder(fmt,slots){
 }
 function openIndiv(){
   const ev=eventOn(S.today.date); if(!ev||ev.type!=='indiv')return;
-  const H=S.players.filter(p=>!unav(p));
+  const H=indPool(ev);
   if(!IND||IND.date!==S.today.date){
     const bs=[...H].sort((a,b)=>srRaw(b)-srRaw(a)).slice(0,2).map(p=>p.id);
     const rest=[...H].filter(p=>!bs.includes(p.id)).sort((a,b)=>drRaw(b)-drRaw(a));
@@ -2067,9 +2281,11 @@ function openIndiv(){
   openSheet(`<div class="sheet-head"><div><div class="sub">エントリー</div><h2>${ev.name}</h2></div><button class="x" data-a="closeSheet" aria-label="閉じる">×</button></div>
   <section class="card"><h3>シングルス(最大3名)</h3>${H.map(p=>`<label class="kv"><span><input type="checkbox" id="is-${p.id}" data-c="indS" data-id="${p.id}" ${IND.s.includes(p.id)?'checked':''}> ${esc(p.name)}</span><b>S${Math.round(srRaw(p))}</b></label>`).join('')}</section>
   <section class="card"><h3>ダブルス(最大2組)</h3>${IND.d.map((pr,i)=>`<div class="slot"><div class="sl">ペア${i+1}</div><div class="ss">${pr.map((id,j)=>`<select id="id-${i}-${j}" data-c="indD" data-i="${i}" data-j="${j}">${opts(id)}</select>`).join('')}</div></div>`).join('')}</section>
-  ${rosterSec('選手データ',S.players,true)}
-  <p class="note">勝ち上がるほどチームの知名度が上がります。優勝で報奨金。</p>
-  <button class="btn warn big" data-a="indGo">エントリーして出場</button>`,true);
+  ${ev.intl?`<section class="card"><h3>大会情報 <span class="sub">${ev.tier}・${ev.cty}</span></h3><div class="kv"><span>遠征費(1人)</span><b>${man(ev.cost)}</b></div>${ev.usd.some(Boolean)?`<div class="kv"><span>優勝賞金</span><b>$${ev.usd[ev.usd.length-1].toLocaleString()}(${man(ev.usd[ev.usd.length-1]*USDJPY)})</b></div><div class="kv"><span>準優勝 / ベスト4</span><b>$${ev.usd[ev.usd.length-2].toLocaleString()} / $${ev.usd[ev.usd.length-3].toLocaleString()}</b></div>`:`<div class="kv"><span>賞金</span><b>なし(メダルで親会社から報奨金)</b></div>`}<p class="note" style="margin-top:6px">出場できるのは日本代表とランキング上位の選手だけです。海外遠征のあとは2日ほどチームを離れます。</p></section>`:''}
+  ${rosterSec('選手データ',H,true)}
+  <p class="note">勝ち上がるほどチームの知名度が上がり、賞金が入ります。</p>
+  <button class="btn warn big" data-a="indLive">観戦しながら出場(作戦を指示)</button>
+  <button class="btn" data-a="indGo">結果だけ見る</button>`,true);
 }
 function openPlayer(id){
   const p=P(id); if(!p)return;
@@ -2107,13 +2323,15 @@ function openOffer(id){
   <button class="btn primary big" data-a="offerGo" ${rosterCount()>=14?'disabled':''}>この条件でオファー</button>`,true);
 }
 function openStart(){
-  openSheet(`<div class="start-h">バドミントン実業団物語</div>
-  <p>バドミントン専用体育館を経営しながら、実業団チームを強くしていく経営ゲームです。2026年10月11日から、本物のカレンダーで1日ずつ進みます。</p>
+  openSheet(`<div class="title-wrap"><canvas id="titleCv" aria-label="体育館で選手たちが打ち合っている様子"></canvas><div class="title-logo"><span class="tl-sub">BADMINTON STORY</span><span class="tl-main">バドミントン<br>実業団物語</span></div></div>
+  <p class="title-lead">体育館を経営しながら、実業団チームを日本一、そして世界へ。2026年10月11日から、本物のカレンダーで1日ずつ進みます。</p>
   <section class="card"><label class="kv" for="tn"><span>チーム名</span></label><input type="text" id="tn" value="湾岸ロジテック" maxlength="14" style="width:100%">
   <div class="seg" style="margin-top:10px"><button class="${UI.g==='M'?'on':''}" data-a="gsel" data-v="M">男子チーム</button><button class="${UI.g==='F'?'on':''}" data-a="gsel" data-v="F">女子チーム</button></div></section>
   <p class="hint">毎日の流れ:営業開始 → 日報 → 翌日の予約確認と練習メニュー決定 → 次の日へ。試合の日はオーダーを組んでから営業します。</p>
   <button class="btn primary big" data-a="newGo">はじめる</button>
-  <button class="btn" data-a="startLoad">セーブデータ・引き継ぎコードから続ける</button>`);
+  <button class="btn" data-a="startLoad">セーブデータ・引き継ぎコードから続ける</button>
+  <p class="note" style="text-align:center">v${VERSION}</p>`);
+  requestAnimationFrame(titleScene);
 }
 
 /* ========== match engine & live ========== */
@@ -2321,15 +2539,6 @@ async function animPoint(r){
 /* ========== gym animation ========== */
 const BUB={cust:['ナイス!','ドンマイ!','もう1ゲーム!','いい球!','惜しい!','ラスト1本!','腕パンパン…','楽しいね!','今のイン?','ナイスカバー!'],team:['声出せー!','もう1本!','足動かせ!','ナイスショット!','集中!','ラスト10本!','もっと低く!','オッケー!'],kid:['できた!','コーチ見てて!','むずかしい〜','もう1回!','当たった!'],coach:['いいよ、その調子!','肘を上げて!','よく見て!','ナイス!'],host:['お願いします!','ポイント!','ナイス!','セッティング!','サービスオーバー']};
 function gvTokens(){const cs=getComputedStyle(document.documentElement),tk=n=>cs.getPropertyValue(n).trim();['--floor','--floor2','--mat','--mat2','--cline','--panel2','--line','--ink','--muted','--team','--bk','--reg','--walk','--school','--accent','--panel'].forEach(k=>GV.tk[k.slice(2)]=tk(k));}
-function gvLayout(){
-  const cv=$('#gym');if(!cv)return;
-  const C=S.gym.courts,W=cv.parentElement.clientWidth||340,cols=C<=4?C:Math.ceil(C/2),rows=Math.ceil(C/cols);
-  const pad=12,gap=10,cw=Math.min(118,(W-pad*2-gap*(cols-1))/cols),ch=cw*2.2,gw=cols*cw+(cols-1)*gap,ox=(W-gw)/2,lobby=78;
-  const H=Math.round(pad+rows*ch+(rows-1)*gap+16+lobby),dpr=window.devicePixelRatio||1;
-  cv.width=W*dpr;cv.height=H*dpr;cv.style.height=H+'px';
-  const courts=[];for(let i=0;i<C;i++){const c=i%cols,r=Math.floor(i/cols);courts.push({x:ox+c*(cw+gap),y:pad+r*(ch+gap),w:cw,h:ch});}
-  GV.L={W,H,dpr,courts,lobbyY:H-lobby,door:{x:28,y:H-16},desk:{x:W/2,y:H-lobby+42},r:clamp(cw*.07,3.2,6)};
-}
 function gvInit(){if(!$('#gym'))return;gvTokens();gvLayout();if(!GV.run){GV.people=[];GV.shut=[];gvDraw(S.today.ran?'本日の営業は終了しました':'開館前');}}
 function spots(c,n){
   const ix=c.x+c.w*.1,iw=c.w*.8,pts=[],top=Math.ceil(n/2),bot=n-top;
@@ -2381,46 +2590,6 @@ function gvUpdate(dt){
     s.u+=dt/s.dur;
     if(s.u>=1){const nf=s.to;nf.sw=.25;s.from=nf;s.to=pick(nf.half===0?bot:top);s.u=0;s.dur=R(.35,.8);}
   });
-}
-function gvDraw(msg){
-  const cv=$('#gym');if(!cv||!GV.L)return;
-  const x=cv.getContext('2d'),L=GV.L,t=GV.tk;
-  x.setTransform(L.dpr,0,0,L.dpr,0,0);
-  x.fillStyle=t.floor;x.fillRect(0,0,L.W,L.lobbyY);
-  x.strokeStyle=t.floor2;x.lineWidth=1;
-  for(let y=6;y<L.lobbyY;y+=9){x.beginPath();x.moveTo(0,y+.5);x.lineTo(L.W,y+.5);x.stroke();}
-  const hi=Math.floor(GV.min/60)-9;
-  L.courts.forEach((ct,i)=>{
-    x.fillStyle=t.mat;x.fillRect(ct.x,ct.y,ct.w,ct.h);
-    const ix=ct.x+ct.w*.08,iy=ct.y+ct.h*.04,iw=ct.w*.84,ih=ct.h*.92,ln=(a,b,c,d)=>{x.beginPath();x.moveTo(a,b);x.lineTo(c,d);x.stroke();};
-    x.strokeStyle=t.cline;x.lineWidth=1;x.strokeRect(ix,iy,iw,ih);
-    const ss=iw*(.46/6.1),sv=ih*(1.98/13.4),lv=ih*(.76/13.4),my=iy+ih/2;
-    ln(ix+ss,iy,ix+ss,iy+ih);ln(ix+iw-ss,iy,ix+iw-ss,iy+ih);
-    ln(ix,my-sv,ix+iw,my-sv);ln(ix,my+sv,ix+iw,my+sv);
-    ln(ix,iy+lv,ix+iw,iy+lv);ln(ix,iy+ih-lv,ix+iw,iy+ih-lv);
-    ln(ix+iw/2,iy,ix+iw/2,my-sv);ln(ix+iw/2,my+sv,ix+iw/2,iy+ih);
-    x.lineWidth=2.5;ln(ct.x+2,my,ct.x+ct.w-2,my);
-    x.fillStyle=t.cline;x.font='700 10px "JetBrains Mono",monospace';x.textAlign='left';x.fillText(String(i+1),ct.x+3,ct.y+11);
-    const cell=GV.run&&hi>=0&&hi<13&&S.today.grid[i]?S.today.grid[i][hi]:null;
-    if(cell){const lb={team:'練習',school:'スクール',walk:'開放',match:'試合',host:'大会',bk:cell.reg?'定期':'予約'}[cell.t];x.font='700 9px "Zen Kaku Gothic New",sans-serif';x.textAlign='right';x.fillText(lb,ct.x+ct.w-3,ct.y+11);}
-  });
-  x.fillStyle=t.panel2;x.fillRect(0,L.lobbyY,L.W,L.H-L.lobbyY);
-  x.strokeStyle=t.line;x.lineWidth=2;x.beginPath();x.moveTo(0,L.lobbyY);x.lineTo(L.W,L.lobbyY);x.stroke();
-  x.fillStyle=t.muted;x.font='500 10px "Zen Kaku Gothic New",sans-serif';x.textAlign='left';x.fillText('入口',14,L.H-34);
-  const s0=L.r*.85, staff=[{lk:S.clerk.lk,shirt:'#4a7a5a'}].concat(S.staff.slice(0,2).map(s=>({lk:lookOf(s),shirt:'#4a7a5a'})));
-  if(GV.run&&!isOffDay(S.today.date)&&GV.min<17*60){const dp=S.players.find(p=>p.ct==='emp'&&p.work==='desk'&&!p.inj);if(dp)staff.push({lk:dp.lk,shirt:t.team});}
-  staff.forEach((s,i)=>drawChibi(x,L.desk.x-(staff.length-1)*s0*1.6+i*s0*3.2,L.desk.y-6,s0,s.lk,{noRacket:true,shirt:s.shirt}));
-  x.fillStyle=t.line;x.fillRect(L.desk.x-Math.max(44,staff.length*s0*2),L.desk.y-10,Math.max(88,staff.length*s0*4),12);
-  x.fillStyle=t.muted;x.textAlign='center';x.fillText('受付',L.desk.x,L.desk.y+14);
-  x.textAlign='right';x.fillText(GV.run?`在館 ${GV.people.filter(p=>p.st!=='out').length}人`:'',L.W-12,L.H-34);
-  [...GV.people].filter(p=>p.wait<=0).sort((a,b)=>a.y-b.y).forEach(p=>{
-    const s=s0*(p.small?.75:1),back=p.st==='play'?p.half===1:(p.ty<p.y-.5);
-    drawChibi(x,p.x,p.y,s,p.lk,{back,run:p.st==='play'?0:p.run,swing:p.sw>0?1-p.sw/.25:0,shirt:p.shirt,noRacket:p.st==='out'});
-  });
-  GV.shut.forEach(s=>{const u=s.u,px=s.from.x+(s.to.x-s.from.x)*u,py=s.from.y+(s.to.y-s.from.y)*u,z=Math.sin(Math.PI*u)*16+s0*3.6;x.fillStyle='rgba(0,0,0,.22)';x.beginPath();x.arc(px,py,1.6,0,7);x.fill();x.fillStyle='#fff';x.beginPath();x.arc(px,py-z,2.2,0,7);x.fill();});
-  GV.people.forEach(p=>{if(p.bub&&p.wait<=0)drawBubble(x,p.x,p.y-s0*5.2,p.bub.t,9,L.W);});
-  if(GV.clerkBub&&GV.rt<GV.clerkBub.until)drawBubble(x,L.desk.x,L.desk.y-s0*5.6,GV.clerkBub.t,9,L.W);
-  if(msg){x.fillStyle='rgba(10,20,15,.55)';const bw=Math.min(L.W-40,240);x.fillRect((L.W-bw)/2,L.lobbyY/2-20,bw,40);x.fillStyle='#fff';x.font='400 15px "Dela Gothic One",sans-serif';x.textAlign='center';x.fillText(msg,L.W/2,L.lobbyY/2+5);}
 }
 function gvRun(done){
   const reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -2480,19 +2649,15 @@ const ACT={
   lvSkip:()=>{if(LIVE){LIVE.skip=true;if(LIVE.adv)LIVE.adv('');}},
   lvClose:()=>{closeSheet();render();},
   openIndiv:()=>openIndiv(),
-  indGo:()=>{
-    const ev=eventOn(S.today.date), en=IND.s.filter(id=>P(id)&&!unav(P(id))).map(id=>({k:'S',ids:[id]}));
-    IND.d.forEach(pr=>{if(pr[0]&&pr[1]&&pr[0]!==pr[1])en.push({k:'D',ids:pr});});
-    if(!en.length)return toast('1つ以上エントリーしてください');
-    const rs=runIndiv(ev,en);
-    S.today.matchDone=true;
-    const best=rs.map(r=>`${r.names} ${r.best}`).join('、');
-    S.results.unshift({date:S.today.date,name:ev.name,txt:best,win:rs.some(r=>r.lg.length>=3)});
-    log(`${ev.name}:${best}`);save();IND=null;
-    openSheet(`<div class="sheet-head"><div><div class="sub">結果</div><h2>${ev.name}</h2></div></div>
-    ${rs.map(r=>`<section class="card"><div class="row"><b class="grow">${r.k==='S'?'シングルス':'ダブルス'}・${esc(r.names)}</b><span class="pill ${r.best.includes('優勝')?'good':'warn'}">${r.best}${r.prize?` 賞金${man(r.prize)}`:''}</span></div><div class="list" style="margin-top:6px">${r.lg.map(g=>`<div class="kv"><span>${g.rd} vs ${esc(g.opp)}</span><b style="color:var(--${g.win?'good':'bad'})">${g.sc}</b></div>`).join('')}</div></section>`).join('')}
-    <button class="btn primary big" data-a="lvClose">体育館に戻る</button>`);
-  },
+  indGo:()=>{const ev=eventOn(S.today.date);if(!ev||!IND)return;const en=indEntries(ev);if(!en.length)return toast('1つ以上エントリーしてください');const rs=runIndiv(ev,en);recordIndiv(ev,rs);openSheet(`<div class="sheet-head"><div><div class="sub">結果</div><h2>${ev.name}</h2></div></div>${indResultHTML(ev,rs)}<button class="btn primary big" data-a="lvClose">体育館に戻る</button>`);},
+  indLive:()=>{const ev=eventOn(S.today.date);if(!ev||!IND)return;const en=indEntries(ev);if(!en.length)return toast('1つ以上エントリーしてください');liveIndiv(ev,en);},
+  lvOne:()=>{if(LIVE){LIVE.one=true;LIVE.skip=true;if(LIVE.adv)LIVE.adv('');}},
+  settings:()=>{UI.rel=null;settingsSheet();},
+  quickSave:()=>{ACT.slotDo('save',1);settingsSheet();},
+  saveNames:()=>{const tn=($('#nmTeam').value||'').trim();if(tn){S.team.name=tn;if(S.league&&S.league.teams[0])S.league.teams[0].name=tn;}S.gymName=($('#nmGym').value||'').trim();let n=0;document.querySelectorAll('.nmP').forEach(el=>{const p=P(el.dataset.pid),v=el.value.trim();if(p&&v&&v!==p.name){p.name=v;n++;}});save();render();settingsSheet();toast(n?`名前を保存しました(選手${n}人)`:'名前を保存しました');},
+  theme:d=>{S.settings=S.settings||{};S.settings.theme=d.v;applyTheme();save();render();settingsSheet();},
+  reset2:()=>{UI.rel='reset';settingsSheet();},
+  resetNo2:()=>{UI.rel=null;settingsSheet();},
   closeSheet:()=>{closeSheet();UI.rel=null;if(!S){openStart();return;}render();},
   bgClose:()=>{const c=$('#sheetCard');if(c.querySelector('.x'))ACT.closeSheet();},
   player:d=>{UI.rel=null;openPlayer(d.id);},
@@ -2543,7 +2708,7 @@ const ACT={
   mtgPick:d=>{const M=UI.mtg;if(!M)return;const st=M.steps[M.i],c=st.ch[+d.i];if(!c)return;const r=c.fx();M.log.push([st.topic,c.l]);M.i++;clampAll();M.reply=r?(typeof r==='string'?{who:st.who,text:r}:r):null;M.react=mtgReact(M,st,c);if(!M.reply&&M.react){M.reply=M.react;M.react=null;}save();openMtg();},
   mtgNext:()=>{if(UI.mtg){UI.mtg.reply=null;openMtg();}},
   mtgClose:()=>{const M=UI.mtg;if(M)log(`${M.title}を開きました(${M.log.map(x=>x[1]).join('・')})`);UI.mtg=null;save();closeSheet();render();},
-  hcAuto:()=>{const ev=eventOn(S.today.date);if(!ev||S.today.matchDone||!S.hc)return;if(ev.type==='indiv'){hcIND();ACT.indGo();return;}const res=runTeamMatch(fkOf(ev),hcSlots(ev),oppFor(ev),true);applyTeamResult(res,ev);showTeamResult(ev,res);},
+  hcAuto:()=>{const ev=eventOn(S.today.date);if(!ev||S.today.matchDone||!S.hc)return;if(ev.type==='indiv'){hcIND(ev);ACT.indGo();return;}const res=runTeamMatch(fkOf(ev),hcSlots(ev),oppFor(ev),true);applyTeamResult(res,ev);showTeamResult(ev,res);},
   hcWatch:()=>{const ev=eventOn(S.today.date);if(!ev||S.today.matchDone||!S.hc)return;liveMatch(ev,hcSlots(ev),true);},
   hireBoss:d=>{const k=d.k,L=k==='mgr'?S.mgrCands:S.hcCands,b=L.find(x=>x.id===d.id);if(!b||S[k])return;b.since=S.today.date;S[k]=b;if(k==='mgr')S.mgrCands=L.filter(x=>x!==b);else S.hcCands=L.filter(x=>x!==b);log(`${b.name}を${k==='mgr'?'支配人':'監督'}として迎えました`);S.talks.unshift({id:'k'+(S.nid++),kind:'report',who:{t:k},text:k==='mgr'?'本日から支配人を務めます。お客様に愛される体育館にしてみせます。':'本日から監督を務めます。このチームを日本一に導きます。',ch:['よろしく頼む'],data:{}});save();render();toast('契約しました');},
   fireBoss:d=>{const k=d.k,b=S[k];if(!b)return;spend('other',b.wage*3);S[k]=null;S.deleg[k==='mgr'?'gym':'team']=false;S.chair=false;log(`${b.name}を解任しました`);save();render();},
@@ -2582,7 +2747,7 @@ const ACT={
   host:()=>{const H=UI.host;if(!H||!H.date)return;const K=HOSTK[H.kind];S.hosted.push({id:'h'+(S.nid++),date:H.date,kind:H.kind,fee:H.fee,name:`${S.team.name}杯 ${K.n}`});log(`${fmtShort(H.date)}に${S.team.name}杯 ${K.n}の開催を決定`);save();render();toast('大会の開催を決定しました');},
   hostCancel:d=>{S.hosted=S.hosted.filter(h=>h.id!==d.id);S.rep=Math.max(5,S.rep-2);log('主催大会を中止しました(評判が少し下がりました)');save();render();},
   gsel:d=>{const n=$('#tn').value;UI.g=d.v;openStart();$('#tn').value=n;},
-  newGo:()=>{const n=($('#tn').value||'').trim()||'湾岸ロジテック';newGame(n,UI.g);save();closeSheet();UI.tab='gym';render();},
+  newGo:()=>{const n=($('#tn').value||'').trim()||'湾岸ロジテック';newGame(n,UI.g);S.seenVer=VERSION;save();closeSheet();UI.tab='gym';render();},
 };
 const CH={
   price:v=>{S.gym.price=+v;$('#pv').textContent=yen(+v);save();},
@@ -2630,9 +2795,9 @@ function boot(){
 function afterLoad(){
   if(!S||!S.today||!S.league){S=null;openStart();return;}
   migrate();
-  if(S.today.liveStarted&&!S.today.matchDone){const ev=eventOn(S.today.date);if(ev&&ev.type!=='indiv'){const fk=fkOf(ev);applyTeamResult(runTeamMatch(fk,aiOrder(S.players,FMT[fk]).map(x=>x.map(p=>p.id)),oppFor(ev)),ev);log('中断された試合はおまかせで進行しました');}S.today.liveStarted=false;save();}
+  if(S.today.liveStarted&&!S.today.matchDone){const ev=eventOn(S.today.date);if(ev&&ev.type==='indiv'){hcIND(ev);recordIndiv(ev,runIndiv(ev,indEntries(ev),true));log('中断された大会はおまかせで進行しました');}else if(ev&&ev.type!=='indiv'){const fk=fkOf(ev);applyTeamResult(runTeamMatch(fk,aiOrder(S.players,FMT[fk]).map(x=>x.map(p=>p.id)),oppFor(ev)),ev);log('中断された試合はおまかせで進行しました');}S.today.liveStarted=false;save();}
   render();
-  if(S.today.ran&&S.tmr)openBooking();
+  if(!updateNotice()&&S.today.ran&&S.tmr)openBooking();
 }
 if(typeof document!=='undefined'&&document.getElementById('view'))boot();
 </script>
